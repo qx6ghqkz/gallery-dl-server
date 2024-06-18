@@ -13,8 +13,8 @@ docker run -d \
   --name gallery-dl-server \
   --user 1000:1000 \
   -p 9080:9080 \
-  --mount type=bind,source="$HOME/.gallery-dl.conf",target=/etc/gallery-dl.conf,readonly \
-  --mount type=bind,source="$HOME/Downloads/gallery-dl",target=/gallery-dl \
+  --mount type=bind,source="/path/to/config/gallery-dl.conf",target=/etc/gallery-dl.conf,readonly \
+  --mount type=bind,source="/path/to/downloads/gallery-dl",target=/gallery-dl \
   --restart unless-stopped \
   qx6ghqkz/gallery-dl-server:latest
 ```
@@ -26,12 +26,20 @@ This is an example service definition that could be put in `docker-compose.yml`.
 [Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN use.
 
 ```yml
+services:
   gallery-dl-server:
     image: qx6ghqkz/gallery-dl-server:latest
-    network_mode: service:vpn
+    network_mode: container:vpn
+    environment:
+      - PUID=1000
+      - PGID=1000
     volumes:
-      - "$HOME/.gallery-dl.conf:/etc/gallery-dl.conf"
-      - "$HOME/Downloads/gallery-dl:/gallery-dl"
+      - type: bind
+        source: "/path/to/config/gallery-dl.conf"
+        target: /etc/gallery-dl.conf
+      - type: bind
+        source: "/path/to/downloads/gallery-dl"
+        target: /gallery-dl
     restart: unless-stopped
 ```
 
@@ -47,7 +55,9 @@ python3 -m uvicorn gallery-dl-server:app --port 9080
 
 Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl/tree/master?tab=readme-ov-file#configuration).
 
-The configuration file must be mounted inside the docker container in one of the locations where gallery-dl will check for the config file (either gallery-dl.conf or config.json).
+The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file (gallery-dl.conf or config.json depending on the location).
+
+The config location used in the examples is `/etc/gallery-dl.conf`. A default config file for use with gallery-dl-server is provided in this repo ([link](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf)).
 
 ## Usage
 
