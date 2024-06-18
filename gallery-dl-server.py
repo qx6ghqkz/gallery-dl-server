@@ -17,7 +17,7 @@ config.load()  # load default config files
 
 async def dl_queue_list(request):
     return templates.TemplateResponse(
-        "index.html", {"request": request, "gallery-dl_version": gdl_version.__version__, "yt-dlp_version": ydl_version.__version__}
+        "index.html", {"request": request, "gallerydl_version": gdl_version.__version__, "ytdlp_version": ydl_version.__version__}
     )
 
 
