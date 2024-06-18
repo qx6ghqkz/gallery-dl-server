@@ -58,6 +58,13 @@ def update():
     try:
         output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "gallery_dl"]
+        )
+
+        print(output.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        print(e.output)
+    try:
+        output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"]
         )
 
