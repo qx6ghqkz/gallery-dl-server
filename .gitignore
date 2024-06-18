@@ -1,0 +1,13 @@
+# Scripts
+*.bat
+*.cmd
+scripts/
+
+# Config files
+*.conf
+
+# Environments
+.env
+.venv
+env/
+venv/

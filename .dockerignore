@@ -1,0 +1,29 @@
+# Visual Studio
+.vscode/
+
+# Scripts
+*.bat
+*.cmd
+
+# Config files
+*.conf
+
+# Images
+*.jpeg
+*.jpg
+*.png
+*.webp
+
+# Git
+.git/
+.gitignore
+.pre-commit-config*
+
+# Docker
+docker-compose*
+Dockerfile*
+
+# Repo
+.github/
+LICENSE
+README.md
