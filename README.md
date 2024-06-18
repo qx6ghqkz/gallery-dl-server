@@ -30,9 +30,7 @@ services:
   gallery-dl-server:
     image: qx6ghqkz/gallery-dl-server:latest
     network_mode: container:vpn
-    environment:
-      - PUID=1000
-      - PGID=1000
+    user: 1000:1000
     volumes:
       - type: bind
         source: "/path/to/config/gallery-dl.conf"
