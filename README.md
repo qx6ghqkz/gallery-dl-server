@@ -2,6 +2,8 @@
 
 Web UI for [`gallery-dl`](https://github.com/mikf/gallery-dl) with support for downloading videos via [`yt-dlp`](https://github.com/yt-dlp/yt-dlp).
 
+![screenshot](images/gallery-dl-server.png)
+
 ## Running
 
 ### Docker CLI
@@ -57,7 +59,7 @@ The configuration file must be mounted inside the Docker container in one of the
 
 The config location used in the examples is `/etc/gallery-dl.conf`. A default config file for use with gallery-dl-server is provided in this repo ([link](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf)).
 
-Any additional directories specified in configuration files must also be mounted inside the Docker container, for example if you specify a cookies file location then that file must be mounted in that very location inside the Docker container.
+Any additional directories specified in configuration files must also be mounted inside the Docker container, for example if you specify a cookies file location then make sure that file is accessible from inside the Docker container.
 
 ## Usage
 
