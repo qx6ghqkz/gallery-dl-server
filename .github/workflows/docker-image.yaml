@@ -4,11 +4,19 @@ on:
   push:
     branches:
       - 'main'
+    paths:
+      - 'templates/**'
+      - '**.py'
+      - 'requirements.txt'
     tags:
       - 'v*'
   pull_request:
     branches:
       - 'main'
+    paths:
+      - 'templates/**'
+      - '**.py'
+      - 'requirements.txt'
     types:
       - closed
 
