@@ -23,9 +23,9 @@ docker run -d \
 
 ### Docker Compose
 
-This is an example service definition that could be put in `docker-compose.yml`. This service uses a VPN client container for its networking.
+This is an example service definition that could be put in `docker-compose.yaml`. This service uses a VPN client container for its networking.
 
-[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN use.
+[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN use. See [docker-compose.yaml](docker-compose.yaml) for a template.
 
 ```yml
 services:
