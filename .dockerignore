@@ -2,13 +2,17 @@
 .vscode/
 
 # Scripts
+scripts/
 *.bat
 *.cmd
+*.ps1
 
 # Config files
 *.conf
+*.json
 
 # Images
+images/
 *.jpeg
 *.jpg
 *.png
@@ -17,11 +21,11 @@
 # Git
 .git/
 .gitignore
-.pre-commit-config*
+.pre-commit-config.*
 
 # Docker
-docker-compose*
-Dockerfile*
+docker-compose.*
+Dockerfile
 
 # Repo
 .github/

@@ -1,10 +1,9 @@
 # Scripts
+scripts/
 *.bat
 *.cmd
-scripts/
+*.ps1
 
 # Environments
-.env
-.venv
-env/
 venv/
+.env
