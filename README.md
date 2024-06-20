@@ -25,7 +25,7 @@ docker run -d \
 
 This is an example service definition that could be put in `docker-compose.yaml`. This service uses a VPN client container for its networking.
 
-[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN use. See [docker-compose.yaml](docker-compose.yaml) for a template.
+[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN usage. See [docker-compose.yaml](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/docker-compose.yaml) for a template.
 
 ```yml
 services:
@@ -53,11 +53,13 @@ python3 -m uvicorn gallery-dl-server:app --port 9080
 
 ### Configuration
 
-Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl/tree/master?tab=readme-ov-file#configuration).
+Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl#configuration).
 
 The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file (gallery-dl.conf or config.json depending on the location).
 
-The config location used in the examples is `/etc/gallery-dl.conf`. A default config file for use with gallery-dl-server is provided in this repo ([link](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf)).
+The config location used in the examples is `/etc/gallery-dl.conf`. A default configuration file for use with gallery-dl-server has been provided ([gallery-dl.conf](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf)).
+
+For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 
 Any additional directories specified in configuration files must also be mounted inside the Docker container, for example if you specify a cookies file location then make sure that file is accessible from inside the Docker container.
 
