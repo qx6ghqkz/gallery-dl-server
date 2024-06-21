@@ -51,7 +51,7 @@ If you have python ^3.6.0 installed in your PATH you can simply run like this.
 python3 -m uvicorn gallery-dl-server:app --port 9080
 ```
 
-### Configuration
+## Configuration
 
 Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl#configuration).
 
@@ -103,3 +103,22 @@ javascript:!function(){fetch("http://${host}:9080/gallery-dl/q",{body:new URLSea
 The server uses [`starlette`](https://github.com/encode/starlette) for the web framework and [`gallery-dl`](https://github.com/mikf/gallery-dl) to handle the downloading. The integration with gallery-dl uses python as described [here](https://github.com/mikf/gallery-dl/issues/642).
 
 This docker image is based on [`python:alpine`](https://registry.hub.docker.com/_/python/) and consequently [`alpine:3.8`](https://hub.docker.com/_/alpine/).
+
+## Useful Links
+
+### gallery-dl
+
+- Documentation: [gallery-dl/README.rst](https://github.com/mikf/gallery-dl/blob/master/README.rst)
+- Configuration options: [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst)
+- List of supported sites: [gallery-dl/docs/supportedsites.md](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md)
+
+### yt-dlp
+
+- Documentation: [yt-dlp/README.md](https://github.com/yt-dlp/yt-dlp/blob/master/README.md)
+- List of supported sites: [yt-dlp/supportedsites.md](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
+- List of extractors: [yt-dlp/yt_dlp/extractor/_extractors.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/_extractors.py)
+
+### Issues
+
+- [gallery-dl/issues/642](https://github.com/mikf/gallery-dl/issues/642)
+- [gallery-dl/issues/1680](https://github.com/mikf/gallery-dl/issues/1680)
