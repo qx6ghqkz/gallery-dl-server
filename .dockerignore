@@ -21,9 +21,13 @@ images/
 # Git
 .git/
 .gitignore
+
+# pre-commit
 .pre-commit-config.*
+.ruff_cache/
 
 # Docker
+.dockerignore
 docker-compose.*
 Dockerfile
 
@@ -31,3 +35,4 @@ Dockerfile
 .github/
 LICENSE
 README.md
+SECURITY.md
