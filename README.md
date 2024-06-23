@@ -8,7 +8,7 @@ Web UI for [`gallery-dl`](https://github.com/mikf/gallery-dl) with support for d
 
 ### Docker CLI
 
-This example uses the docker run command to create the container to run the app.
+This example uses the `docker run` command to create the container to run the app.
 
 ```shell
 docker run -d \
@@ -45,7 +45,7 @@ services:
 
 ### Python
 
-If you have python ^3.6.0 installed in your PATH you can simply run like this.
+If you have Python ^3.6.0 installed in your PATH you can simply run like this.
 
 ```shell
 python3 -m uvicorn gallery-dl-server:app --port 9080
@@ -92,7 +92,7 @@ fetch(`http://${host}:9080/gallery-dl/q`, {
 
 #### Bookmarklet
 
-Add the following bookmarklet to your bookmark bar so you can conviently send the current page url to your youtube-dl-server instance.
+Add the following bookmarklet to your bookmark bar so you can conveniently send the current page URL to your gallery-dl-server instance.
 
 ```javascript
 javascript:!function(){fetch("http://${host}:9080/gallery-dl/q",{body:new URLSearchParams({url:window.location.href}),method:"POST"})}();
@@ -100,9 +100,9 @@ javascript:!function(){fetch("http://${host}:9080/gallery-dl/q",{body:new URLSea
 
 ## Implementation
 
-The server uses [`starlette`](https://github.com/encode/starlette) for the web framework and [`gallery-dl`](https://github.com/mikf/gallery-dl) to handle the downloading. The integration with gallery-dl uses python as described [here](https://github.com/mikf/gallery-dl/issues/642).
+The server uses [`starlette`](https://github.com/encode/starlette) for the web framework and [`gallery-dl`](https://github.com/mikf/gallery-dl) to handle the downloading. The integration with gallery-dl uses Python as described [here](https://github.com/mikf/gallery-dl/issues/642).
 
-This docker image is based on [`python:alpine`](https://registry.hub.docker.com/_/python/) and consequently [`alpine:3.8`](https://hub.docker.com/_/alpine/).
+The Docker image is based on [`python:alpine`](https://registry.hub.docker.com/_/python/) and consequently [`alpine`](https://hub.docker.com/_/alpine/).
 
 ## Useful Links
 
