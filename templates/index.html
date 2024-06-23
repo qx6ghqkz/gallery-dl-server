@@ -4,7 +4,7 @@
     <!-- Required meta tags -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Web frontend for gallery-dl" />
+    <meta name="description" content="Web frontend for gallery-dl with yt-dlp" />
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
@@ -38,8 +38,7 @@
             class="text-info"
             href="https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md"
             >gallery-dl</a
-          >
-          or
+          > or
           <a
             class="text-info"
             href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md"
@@ -64,18 +63,16 @@
           </div>
         </form>
       </main>
-      <footer class="mt-auto text-muted">
+      <footer class="mt-auto text-white-50">
         <div id="liveAlertPlaceholder"></div>
         <p>
           Web frontend for
-          <a class="text-light" href="https://github.com/mikf/gallery-dl"
+          <a class="text-white" href="https://github.com/mikf/gallery-dl"
             >gallery-dl</a
-          >
-          v{{ gallerydl_version }} with
-          <a class="text-light" href="https://github.com/yt-dlp/yt-dlp"
+          > v{{ gallerydl_version }} with
+          <a class="text-white" href="https://github.com/yt-dlp/yt-dlp"
             >yt-dlp</a
-          >
-          v{{ ytdlp_version }}.
+          > v{{ ytdlp_version }}.
         </p>
       </footer>
     </div>
@@ -105,7 +102,7 @@
         alert(
           'Successfully added <a href=' +
             added +
-            '>one item</a> to the download queue',
+            '>one item</a> to the download queue.',
           'success',
         );
       }
