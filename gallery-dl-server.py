@@ -15,9 +15,15 @@ templates = Jinja2Templates(directory="templates")
 
 config.load()  # load default config files
 
+
 async def dl_queue_list(request):
     return templates.TemplateResponse(
-        "index.html", {"request": request, "gallerydl_version": gdl_version.__version__, "ytdlp_version": ydl_version.__version__}
+        "index.html",
+        {
+            "request": request,
+            "gallerydl_version": gdl_version.__version__,
+            "ytdlp_version": ydl_version.__version__,
+        },
     )
 
 
@@ -40,9 +46,7 @@ async def q_put(request):
     print("Added url " + url + " to the download queue")
 
     if not ui:
-        return JSONResponse(
-            {"success": True, "url": url}, background=task
-        )
+        return JSONResponse({"success": True, "url": url}, background=task)
     return RedirectResponse(
         url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
     )
@@ -55,6 +59,14 @@ async def update_route(scope, receive, send):
 
 
 def update():
+    try:
+        output = subprocess.check_output(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "pip"]
+        )
+
+        print(output.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        print(e.output)
     try:
         output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "gallery_dl"]
@@ -74,6 +86,7 @@ def update():
 
 
 def download(url):
+    config.load()
     job.DownloadJob(url).run()
 
 
