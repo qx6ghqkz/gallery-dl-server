@@ -19,8 +19,12 @@ RUN apk --update-cache add --virtual build-dependencies gcc libc-dev make \
 
 COPY . .
 
-EXPOSE 9080
+ENV CONTAINER_PORT 9080
+
+EXPOSE ${CONTAINER_PORT}
 
 VOLUME ["/gallery-dl"]
 
-CMD ["uvicorn", "gallery-dl-server:app", "--host", "0.0.0.0", "--port", "9080"]
+RUN chmod +x ./start.sh
+
+CMD ["./start.sh"]

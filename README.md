@@ -27,10 +27,11 @@ This is an example service definition that could be put in `docker-compose.yaml`
 
 [Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN usage. See [docker-compose.yaml](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/docker-compose.yaml) for a template.
 
-```yml
+```yaml
 services:
   gallery-dl-server:
     image: qx6ghqkz/gallery-dl-server:latest
+    container_name: gallery-dl-server
     network_mode: container:vpn
     user: 1000:1000
     volumes:
@@ -49,6 +50,45 @@ If you have Python ^3.6.0 installed in your PATH you can simply run like this.
 
 ```shell
 python3 -m uvicorn gallery-dl-server:app --port 9080
+```
+
+### Port Mapping
+
+By default, this service listens on port 9080. You can use any value for the host port, but if you would like to map to a different internal container port, you need to set the `CONTAINER_PORT` environment variable. This can be done using the `-e` flag with `docker run` or in a Docker Compose file.
+
+For example, if you need to run multiple instances of gallery-dl-server using [Gluetun](https://github.com/qdm12/gluetun) for the networking (every instance must use a different internal port), you can specify an internal port other than the default 9080.
+
+All services defined in the same `docker-compose.yaml` file:
+
+```yaml
+services:
+  gallery-dl-server:
+    image: qx6ghqkz/gallery-dl-server:latest
+    container_name: gallery-dl-server
+    depends_on:
+      - gluetun
+    network_mode: service:gluetun
+    ...
+
+  gallery-dl-server-2:
+    image: qx6ghqkz/gallery-dl-server:latest
+    container_name: gallery-dl-server-2
+    environment:
+      - CONTAINER_PORT=9090
+    depends_on:
+      - gluetun
+    network_mode: service:gluetun
+    ...
+
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    ports:
+      # gallery-dl-server
+      - 9080:9080
+      # gallery-dl-server-2
+      - 9090:9090
+    ...
 ```
 
 ## Configuration
