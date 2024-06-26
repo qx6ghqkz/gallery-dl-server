@@ -21,6 +21,8 @@ docker run -d \
   qx6ghqkz/gallery-dl-server:latest
 ```
 
+Important: the server will load all changes made to the config file before every download, but in order to ensure modifications to the config file are propagated to the Docker container while it is still running, you need to make sure your text editor saves changes to the file directly instead of using a temp-replace method (nano should work). Alternatively, it is easier to simply mount the directory containing the config file rather than the config file itself, for example via `--mount type=bind,source="/path/to/config/dir",target=/etc`. This ensures changes to the config file will be picked up without having to restart the Docker container. More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
+
 ### Docker Compose
 
 This is an example service definition that could be put in `docker-compose.yaml`. This service uses a VPN client container for its networking.
