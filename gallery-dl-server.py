@@ -13,8 +13,6 @@ from yt_dlp import version as ydl_version
 
 templates = Jinja2Templates(directory="templates")
 
-config.load()  # load default config files
-
 
 async def dl_queue_list(request):
     return templates.TemplateResponse(
@@ -86,6 +84,7 @@ def update():
 
 
 def download(url):
+    config.clear()
     config.load()
     job.DownloadJob(url).run()
 
