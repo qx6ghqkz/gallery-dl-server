@@ -13,10 +13,6 @@ scripts/
 
 # Images
 images/
-*.jpeg
-*.jpg
-*.png
-*.webp
 
 # Git
 .git/
