@@ -5,4 +5,4 @@ python-multipart==0.0.9
 starlette==0.37.2
 uvicorn==0.30.1; platform_machine != 'x86_64'
 uvicorn[standard]==0.30.1; platform_machine == 'x86_64'
-yt-dlp==2024.7.7
+yt-dlp==2024.7.9
