@@ -34,18 +34,21 @@ async def q_put(request):
     form = await request.form()
     url = form.get("url").strip()
     ui = form.get("ui")
+    options = {"format": form.get("format")}
 
     if not url:
         return JSONResponse(
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
-    task = BackgroundTask(download, url)
+    task = BackgroundTask(download, url, options)
 
     print("Added url " + url + " to the download queue")
 
     if not ui:
-        return JSONResponse({"success": True, "url": url}, background=task)
+        return JSONResponse(
+            {"success": True, "url": url, "options": options}, background=task
+        )
     return RedirectResponse(
         url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
     )
@@ -58,14 +61,6 @@ async def update_route(scope, receive, send):
 
 
 def update():
-    try:
-        output = subprocess.check_output(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "pip"]
-        )
-
-        print(output.decode("utf-8"))
-    except subprocess.CalledProcessError as e:
-        print(e.output)
     try:
         output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "gallery_dl"]
@@ -84,9 +79,29 @@ def update():
         print(e.output)
 
 
-def download(url):
+def config_update_options(request_options):
+    requested_format = request_options.get("format", "video")
+
+    if requested_format == "audio":
+        config.set(
+            ("extractor", "ytdl"),
+            "raw-options",
+            {
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "best",
+                        "preferredquality": 320,
+                    }
+                ]
+            },
+        )
+
+
+def download(url, request_options):
     config.clear()
     config.load()
+    config_update_options(request_options)
     job.DownloadJob(url).run()
 
 
@@ -100,5 +115,5 @@ routes = [
 
 app = Starlette(debug=True, routes=routes)
 
-print("Updating gallery-dl and yt-dlp to the latest version . . . ")
+print("\nUpdating gallery-dl and yt-dlp to the latest version . . . \n")
 update()

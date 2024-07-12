@@ -15,13 +15,11 @@ docker run -d \
   --name gallery-dl-server \
   --user 1000:1000 \
   -p 9080:9080 \
-  --mount type=bind,source="/path/to/config/gallery-dl.conf",target=/etc/gallery-dl.conf,readonly \
-  --mount type=bind,source="/path/to/downloads/gallery-dl",target=/gallery-dl \
+  --mount type=bind,source="/path/to/data",target=/etc \
+  --mount type=bind,source="/path/to/downloads",target=/gallery-dl \
   --restart unless-stopped \
   qx6ghqkz/gallery-dl-server:latest
 ```
-
-Important: the server will load all changes made to the config file before every download, but in order to ensure modifications to the config file are propagated to the Docker container while it is still running, you need to make sure your text editor saves changes to the file directly instead of using a temp-replace method (nano should work). Alternatively, it is easier to simply mount the directory containing the config file rather than the config file itself, for example via `--mount type=bind,source="/path/to/config/dir",target=/etc`. This ensures changes to the config file will be picked up without having to restart the Docker container. More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
 
 ### Docker Compose
 
@@ -38,13 +36,15 @@ services:
     user: 1000:1000
     volumes:
       - type: bind
-        source: "/path/to/config/gallery-dl.conf"
-        target: /etc/gallery-dl.conf
+        source: "/path/to/data"
+        target: /etc
       - type: bind
-        source: "/path/to/downloads/gallery-dl"
+        source: "/path/to/downloads"
         target: /gallery-dl
     restart: unless-stopped
 ```
+
+**Important**: Make sure to mount the directory containing the config file rather than the file itself. This ensures changes to the config file will be picked up without having to restart the Docker container. The server loads all changes made to the config file before each download, but if the file is mounted directly, in order to ensure modifications are propagated to the Docker container while it is still running, you need to make sure your text editor saves changes to the file directly instead of using a temp-replace method (nano should work). More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
 
 ### Python
 
@@ -99,11 +99,13 @@ Configuration of gallery-dl is as documented in the [official documentation](htt
 
 The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file (gallery-dl.conf or config.json depending on the location).
 
-The config location used in the examples is `/etc/gallery-dl.conf`. A default configuration file for use with gallery-dl-server has been provided ([gallery-dl.conf](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf)).
+The target config location used in the examples is `/etc/gallery-dl.conf`. A default configuration file for use with gallery-dl-server has been provided ([gallery-dl.conf](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf)).
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 
-Any additional directories specified in configuration files must also be mounted inside the Docker container, for example if you specify a cookies file location then make sure that file is accessible from inside the Docker container.
+Any additional directories specified in the configuration file must also be mounted inside the Docker container, for example if you specify a cookies file location then make sure that location is accessible from within the Docker container.
+
+It is recommended to place any additional files such as archive, cache and cookies files inside the same `data` directory as the config file.
 
 ## Usage
 
@@ -142,7 +144,7 @@ javascript:!function(){fetch("http://${host}:9080/gallery-dl/q",{body:new URLSea
 
 ## Implementation
 
-The server uses [`starlette`](https://github.com/encode/starlette) for the web framework and [`gallery-dl`](https://github.com/mikf/gallery-dl) to handle the downloading. The integration with gallery-dl uses Python as described [here](https://github.com/mikf/gallery-dl/issues/642).
+The server uses [`starlette`](https://github.com/encode/starlette) for the web framework with [`gallery-dl`](https://github.com/mikf/gallery-dl) and [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) to handle the downloading. The integration with gallery-dl uses Python as described [here](https://github.com/mikf/gallery-dl/issues/642). For video downloads, gallery-dl imports yt-dlp.
 
 The Docker image is based on [`python:alpine`](https://registry.hub.docker.com/_/python/) and consequently [`alpine`](https://hub.docker.com/_/alpine/).
 
@@ -151,6 +153,7 @@ The Docker image is based on [`python:alpine`](https://registry.hub.docker.com/_
 ### gallery-dl
 
 - Documentation: [gallery-dl/README.rst](https://github.com/mikf/gallery-dl/blob/master/README.rst)
+- Config file outline: [gallery-dl/wiki/config-file-outline](https://github.com/mikf/gallery-dl/wiki/config-file-outline)
 - Configuration options: [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst)
 - List of supported sites: [gallery-dl/docs/supportedsites.md](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md)
 
