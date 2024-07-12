@@ -3,7 +3,7 @@ name: Publish Docker Image
 on:
   push:
     branches:
-      - 'main'
+      - 'test'
     paths:
       - 'icons/**'
       - 'templates/**'
@@ -11,26 +11,11 @@ on:
       - 'Dockerfile'
       - 'requirements.txt'
       - 'start.sh'
-    tags:
-      - 'v*'
-  pull_request:
-    branches:
-      - 'main'
-    paths:
-      - 'icons/**'
-      - 'templates/**'
-      - '**.py'
-      - 'Dockerfile'
-      - 'requirements.txt'
-      - 'start.sh'
-    types:
-      - closed
   workflow_dispatch:
 
 jobs:
   docker:
     name: Build Docker image and push to Docker Hub and GHCR
-    if: ${{ (github.event_name == 'push' && 'pass' || github.event_name == 'workflow_dispatch' && 'pass' || (github.event.pull_request.merged == true && 'pass' || 'fail')) == 'pass' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -44,8 +29,7 @@ jobs:
             ${{ github.repository }}
             ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
