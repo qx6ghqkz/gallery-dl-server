@@ -79,21 +79,100 @@ def update():
         print(e.output)
 
 
-def config_update_options(request_options):
-    requested_format = request_options.get("format", "video")
+def config_remove(path, key=None, value=None):
+    entries = []
+    removed_entries = []
+
+    if isinstance(path, list):
+        _list = path
+
+        for entry in _list:
+            if key:
+                if value:
+                    if entry.get(key) == value:
+                        entries.append(entry)
+                else:
+                    if entry.get(key):
+                        entries.append(entry)
+            else:
+                if entry == value:
+                    entries.append(entry)
+
+        for entry in entries:
+            try:
+                _list.remove(entry)
+            except Exception as e:
+                print("Exception: " + str(e))
+            else:
+                removed_entries.append(entry)
+
+    if isinstance(path, dict):
+        _dict = path
+
+        if value:
+            for k, v in _dict.items():
+                if k == key and v == value:
+                    entries.append(k)
+        else:
+            for k in _dict.keys():
+                if k == key:
+                    entries.append(k)
+
+        for entry in entries:
+            try:
+                _dict.pop(entry)
+            except Exception as e:
+                print("Exception: " + str(e))
+            else:
+                removed_entries.append(entry)
+
+    return removed_entries
+
+
+def config_update(request_options):
+    requested_format = request_options.get("format", "select")
+
+    if requested_format == "video":
+        config_remove(
+            config._config.get("extractor", {}).get("ytdl", {}).get("cmdline-args", []),
+            None,
+            "--extract-audio",
+        )
+
+        config_remove(
+            config._config.get("extractor", {}).get("ytdl", {}).get("cmdline-args", []),
+            None,
+            "-x",
+        )
+
+        config_remove(
+            config._config.get("extractor", {}).get("ytdl", {}).get("raw-options", {}),
+            "writethumbnail",
+            False,
+        )
+
+        config_remove(
+            config._config.get("extractor", {})
+            .get("ytdl", {})
+            .get("raw-options", {})
+            .get("postprocessors", []),
+            "key",
+            "FFmpegExtractAudio",
+        )
 
     if requested_format == "audio":
         config.set(
             ("extractor", "ytdl"),
             "raw-options",
             {
+                "writethumbnail": False,
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
                         "preferredcodec": "best",
                         "preferredquality": 320,
                     }
-                ]
+                ],
             },
         )
 
@@ -101,7 +180,7 @@ def config_update_options(request_options):
 def download(url, request_options):
     config.clear()
     config.load()
-    config_update_options(request_options)
+    config_update(request_options)
     job.DownloadJob(url).run()
 
 
