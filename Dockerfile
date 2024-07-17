@@ -40,7 +40,8 @@ RUN addgroup --gid "$GID" "$GROUP" \
 RUN mkdir -p /.cache/pip \
   && mkdir /.local
 
-RUN chown -R $USER:$GROUP /.cache/pip \
+RUN chown -R $USER:$GROUP . \
+  && chown -R $USER:$GROUP /.cache/pip \
   && chown -R $USER:$GROUP /.local
 
 RUN chmod +x ./start.sh
