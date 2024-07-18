@@ -133,32 +133,40 @@ def config_update(request_options):
     requested_format = request_options.get("format", "select")
 
     if requested_format == "video":
-        config_remove(
-            config._config.get("extractor", {}).get("ytdl", {}).get("cmdline-args", []),
-            None,
-            "--extract-audio",
-        )
+        try:
+            cmdline_args = (
+                config._config.get("extractor", {})
+                .get("ytdl", {})
+                .get("cmdline-args", [])
+            )
+        except AttributeError:
+            pass
+        else:
+            config_remove(cmdline_args, None, "--extract-audio")
+            config_remove(cmdline_args, None, "-x")
 
-        config_remove(
-            config._config.get("extractor", {}).get("ytdl", {}).get("cmdline-args", []),
-            None,
-            "-x",
-        )
+        try:
+            raw_options = (
+                config._config.get("extractor", {})
+                .get("ytdl", {})
+                .get("raw-options", {})
+            )
+        except AttributeError:
+            pass
+        else:
+            config_remove(raw_options, "writethumbnail", False)
 
-        config_remove(
-            config._config.get("extractor", {}).get("ytdl", {}).get("raw-options", {}),
-            "writethumbnail",
-            False,
-        )
-
-        config_remove(
-            config._config.get("extractor", {})
-            .get("ytdl", {})
-            .get("raw-options", {})
-            .get("postprocessors", []),
-            "key",
-            "FFmpegExtractAudio",
-        )
+        try:
+            postprocessors = (
+                config._config.get("extractor", {})
+                .get("ytdl", {})
+                .get("raw-options", {})
+                .get("postprocessors", [])
+            )
+        except AttributeError:
+            pass
+        else:
+            config_remove(postprocessors, "key", "FFmpegExtractAudio")
 
     if requested_format == "audio":
         config.set(
