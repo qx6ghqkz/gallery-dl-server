@@ -11,11 +11,24 @@ on:
       - 'Dockerfile'
       - 'requirements.txt'
       - 'start.sh'
+  pull_request:
+    branches:
+      - 'test'
+    paths:
+      - 'icons/**'
+      - 'templates/**'
+      - '**.py'
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - 'start.sh'
+    types:
+      - closed
   workflow_dispatch:
 
 jobs:
   docker:
     name: Build Docker image and push to Docker Hub and GHCR
+    if: ${{ (github.event_name == 'push' && 'pass' || (github.event_name == 'workflow_dispatch' && 'pass' || (github.event.pull_request.merged == true && 'pass' || 'fail'))) == 'pass' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
