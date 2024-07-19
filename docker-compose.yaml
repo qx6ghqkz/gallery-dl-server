@@ -1,22 +1,24 @@
 #
-# Docker compose template using gluetun as a VPN in the same container stack.
-# In this example, `gallery-dl.conf` is located in the same directory as the compose file.
-# The environment variables for your VPN configuration can go in this file or a separate `.env` file in the same directory, or specify
-# the location with `docker compose --env-file <location> up -d`.
+# Docker Compose template using gluetun as a VPN in the same container stack.
+# In this example, `gallery-dl.conf` is located inside the `data` folder in the same directory as the Compose file.
+# The environment variables for your VPN configuration can go in this file or a separate `.env` file in the same directory,
+# or specify the location with `docker compose --env-file <location> up -d`.
 #
 
 services:
   gallery-dl-server:
     image: qx6ghqkz/gallery-dl-server:latest
-    container_name: gdl-serv
+    container_name: gdl-server
     depends_on:
       - gluetun
     network_mode: service:gluetun
-    user: 1000:1000
+    environment:
+      - UID=1000
+      - GID=1000
     volumes:
       - type: bind
-        source: ./gallery-dl.conf
-        target: /etc/gallery-dl.conf
+        source: ./data
+        target: /etc
       - type: bind
         source: ~/Downloads/gallery-dl
         target: /gallery-dl
@@ -30,12 +32,12 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      # gallery-dl-server ports
+      # gallery-dl-server
       - 9080:9080
     volumes:
       - ~/Documents/gluetun:/gluetun
     environment:
-      # Configuration for Wireguard. See https://github.com/qdm12/gluetun?tab=readme-ov-file#setup for more details.
+      # Configuration for Wireguard. See https://github.com/qdm12/gluetun#setup for more details.
       - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
       - VPN_TYPE=${VPN_TYPE}
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
