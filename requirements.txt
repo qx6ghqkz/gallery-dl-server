@@ -6,4 +6,4 @@ requests==2.32.3
 starlette==0.38.2
 uvicorn==0.30.5; platform_machine != 'x86_64'
 uvicorn[standard]==0.30.5; platform_machine == 'x86_64'
-yt-dlp==2024.5.27
+yt-dlp==2024.8.6
