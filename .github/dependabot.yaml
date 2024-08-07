@@ -5,6 +5,3 @@ updates:
     schedule:
       interval: 'daily'
     target-branch: 'main'
-    ignore:
-      - dependency-name: 'requests'
-      - dependency-name: 'yt-dlp'
