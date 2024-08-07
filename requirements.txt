@@ -2,7 +2,7 @@ aiofiles==24.1.0
 gallery_dl==1.27.2
 Jinja2==3.1.4
 python-multipart==0.0.9
-requests==2.31.0
+requests==2.32.3
 starlette==0.38.2
 uvicorn==0.30.5; platform_machine != 'x86_64'
 uvicorn[standard]==0.30.4; platform_machine == 'x86_64'
