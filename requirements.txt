@@ -5,5 +5,5 @@ python-multipart==0.0.12
 requests==2.32.3
 starlette==0.39.2
 uvicorn==0.31.1; platform_machine != 'x86_64'
-uvicorn[standard]==0.31.0; platform_machine == 'x86_64'
+uvicorn[standard]==0.31.1; platform_machine == 'x86_64'
 yt-dlp==2024.10.7
