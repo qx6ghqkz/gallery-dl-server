@@ -202,6 +202,5 @@ routes = [
 
 app = Starlette(debug=True, routes=routes)
 
-print("")
-# print("Updating gallery-dl and yt-dlp to the latest version . . . \n")
+# print("\nUpdating gallery-dl and yt-dlp to the latest version . . . \n")
 # update()

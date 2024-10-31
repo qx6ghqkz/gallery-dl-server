@@ -1,3 +1,7 @@
+[![Docker Stars Shield](https://img.shields.io/docker/stars/qx6ghqkz/gallery-dl-server.svg?style=flat-square)](https://hub.docker.com/r/qx6ghqkz/gallery-dl-server/)
+[![Docker Pulls Shield](https://img.shields.io/docker/pulls/qx6ghqkz/gallery-dl-server.svg?style=flat-square)](https://hub.docker.com/r/qx6ghqkz/gallery-dl-server/)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://raw.githubusercontent.com/qx6ghqkz/gallery-dl-server/master/LICENSE)
+
 # gallery-dl-server
 
 Web UI for [`gallery-dl`](https://github.com/mikf/gallery-dl) with support for downloading videos via [`yt-dlp`](https://github.com/yt-dlp/yt-dlp).
