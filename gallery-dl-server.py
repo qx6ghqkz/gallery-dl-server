@@ -15,7 +15,7 @@ from starlette.background import BackgroundTask
 from gallery_dl import config, version as gdl_version
 from yt_dlp import version as ydl_version
 
-templates = Jinja2Templates(directory="templates", enable_async=True)
+templates = Jinja2Templates(directory="templates")
 
 # async def update_log(scope, receive, send):
 #     assert scope["type"] == "http"
