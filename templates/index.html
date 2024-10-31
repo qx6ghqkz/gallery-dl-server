@@ -161,11 +161,11 @@
           </div>
         </form>
 
-        <div>
-          <a href="/gallery-dl/logs" id="btn-logs" class="btn btn-outline-light" onclick="toggleLogs()">Show Logs</a>
+        <div id="container-btn">
+          <button id="btn-logs" class="btn btn-outline-light" onclick="toggleLogs()">Show Logs</button>
         </div>
 
-        <div>
+        <div id="container-logs">
           <textarea id="box" name="Logs" placeholder="Logs output" readonly style="display: none"></textarea>
         </div>
       </main>
@@ -232,14 +232,14 @@
 
       function addLog(message) {
         const box = document.getElementById("box");
-        box.innerText += message + "\n";
+        box.innerHTML += message + "\n";
         box.scrollTop = box.scrollHeight;
       }
 
       async function fetchLogs() {
         const response = await fetch("gallery-dl/logs");
         const logs = await response.text();
-        document.getElementById("box").innerText = logs;
+        document.getElementById("box").textContent = logs;
       }
 
       fetchLogs();
