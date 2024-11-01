@@ -248,8 +248,11 @@
         const box = document.getElementById("box");
         const response = await fetch("gallery-dl/logs");
         const logs = await response.text();
-        box.textContent = logs;
-        box.scrollTop = box.scrollHeight;
+
+        if (box.textContent != logs) {
+          box.textContent = logs;
+          box.scrollTop = box.scrollHeight;
+        }
       }
 
       fetchLogs();
