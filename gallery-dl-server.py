@@ -45,7 +45,7 @@ async def q_put(request):
     options = {"format": form.get("format")}
 
     if not url:
-        logging.error("No URL provided")
+        logging.error("No URL provided.")
         return JSONResponse(
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
@@ -238,7 +238,7 @@ def download(url, request_options):
 
     exit_code = process.wait()
     if exit_code == 0:
-        logging.info("Download completed successfully")
+        logging.info("Download completed successfully.")
     else:
         logging.error(f"Download failed with exit code: {exit_code}")
 
