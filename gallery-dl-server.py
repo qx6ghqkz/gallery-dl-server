@@ -4,7 +4,6 @@ import subprocess
 import logging
 import re
 
-from starlette.status import HTTP_303_SEE_OTHER
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, RedirectResponse, FileResponse
 from starlette.routing import Route, Mount
@@ -69,9 +68,11 @@ async def q_put(request):
         return JSONResponse(
             {"success": True, "url": url, "options": options}, background=task
         )
-    return RedirectResponse(
-        url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
-    )
+
+    return
+    # return RedirectResponse(
+    #     url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
+    # )
 
 
 async def update_route(scope, receive, send):
@@ -238,7 +239,7 @@ def download(url, request_options):
 
     exit_code = process.wait()
     if exit_code == 0:
-        logging.info("Download completed successfully.")
+        logging.info("Download completed.")
     else:
         logging.error(f"Download failed with exit code: {exit_code}")
 
