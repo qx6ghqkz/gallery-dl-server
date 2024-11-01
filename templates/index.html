@@ -220,10 +220,10 @@
         addLog("Added one item to the download queue: " + added);
       }
 
-      const box = document.getElementById("box");
-      const btn = document.getElementById("btn-logs");
-
       function toggleLogs() {
+        const box = document.getElementById("box");
+        const btn = document.getElementById("btn-logs");
+
         if (btn.innerText == "Show Logs") {
           btn.innerText = "Hide Logs";
           box.style.display = "inline";
@@ -239,6 +239,7 @@
       }
 
       function addLog(message) {
+        const box = document.getElementById("box");
         box.innerHTML += message + "\n";
         box.scrollTop = box.scrollHeight;
       }
@@ -263,6 +264,8 @@
       }
 
       function loadBox() {
+        const box = document.getElementById("box");
+
         if ("boxHeight" in sessionStorage && sessionStorage.getItem("boxHeight") != "0") {
           box.style.height = sessionStorage.getItem("boxHeight") + "px";
         }
@@ -278,6 +281,7 @@
       }
 
       function saveBox() {
+        const box = document.getElementById("box");
         let boxPos = box.getBoundingClientRect();
         sessionStorage.setItem("boxHeight", boxPos.height);
         sessionStorage.setItem("scrollPos", box.scrollTop);
