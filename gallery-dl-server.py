@@ -69,6 +69,7 @@ async def q_put(request):
         return JSONResponse(
             {"success": True, "url": url, "options": options}, background=task
         )
+
     return RedirectResponse(
         url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
     )
@@ -76,7 +77,7 @@ async def q_put(request):
 
 async def update_route(scope, receive, send):
     task = BackgroundTask(update)
-    return JSONResponse({"output": "Initiated package update"}, background=task)
+    return JSONResponse({"output": "Initiated package update."}, background=task)
 
 
 def update():
@@ -228,8 +229,10 @@ def download(url, request_options):
         if output:
             formatted_output = output.strip()
             formatted_output = remove_ansi_escape_sequences(formatted_output)
-            if "Added URL" in formatted_output or formatted_output.startswith("#"):
+            if "Added URL" in formatted_output:
                 logging.info(formatted_output)
+            if formatted_output.startswith("#"):
+                logging.error("File already exists.")
 
     stderr_output = process.stderr.read()
     if stderr_output:
@@ -238,7 +241,7 @@ def download(url, request_options):
 
     exit_code = process.wait()
     if exit_code == 0:
-        logging.info("Download completed successfully.")
+        logging.info("Download task completed.")
     else:
         logging.error(f"Download failed with exit code: {exit_code}")
 

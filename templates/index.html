@@ -245,9 +245,11 @@
       }
 
       async function fetchLogs() {
+        const box = document.getElementById("box");
         const response = await fetch("gallery-dl/logs");
         const logs = await response.text();
-        document.getElementById("box").textContent = logs;
+        box.textContent = logs;
+        box.scrollTop = box.scrollHeight;
       }
 
       fetchLogs();
@@ -256,7 +258,6 @@
 
       if (localStorage.getItem("logs") == "shown") {
         toggleLogs();
-        loadBox();
       }
 
       window.onbeforeunload = function(event) {
