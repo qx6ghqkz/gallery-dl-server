@@ -246,9 +246,8 @@ app = Starlette(debug=True, routes=routes)
 log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
 os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.propagate = False
+logger_root = logging.getLogger()
+logger_root.setLevel(logging.INFO)
 
 formatter = logging.Formatter(
     "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
@@ -262,8 +261,12 @@ handler_file = logging.FileHandler(log_file)
 handler_file.setLevel(logging.INFO)
 handler_file.setFormatter(formatter)
 
-logger.addHandler(handler_console)
-logger.addHandler(handler_file)
+logger_root.addHandler(handler_console)
+logger_root.addHandler(handler_file)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.propagate = True
 
 # # load config before setting up logging
 # config.load()
