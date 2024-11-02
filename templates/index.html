@@ -216,8 +216,25 @@
           title: "Success!",
           html: "Added <a href=" + added + ">one item</a> to the download queue.",
         });
+      }
 
-        addLog("Added one item to the download queue: " + added);
+      fetchLogs();
+
+      setInterval(fetchLogs, 1000);
+
+      async function fetchLogs() {
+        const box = document.getElementById("box");
+        const response = await fetch("gallery-dl/logs");
+        const logs = await response.text();
+
+        if (box.textContent != logs) {
+          box.textContent = logs;
+          box.scrollTop = box.scrollHeight;
+        }
+      }
+
+      if (localStorage.getItem("logs") == "shown") {
+        toggleLogs();
       }
 
       function toggleLogs() {
@@ -236,35 +253,6 @@
           box.style.display = "none";
           localStorage.setItem("logs","hidden");
         }
-      }
-
-      function addLog(message) {
-        const box = document.getElementById("box");
-        box.textContent += message + "\n";
-        box.scrollTop = box.scrollHeight;
-      }
-
-      async function fetchLogs() {
-        const box = document.getElementById("box");
-        const response = await fetch("gallery-dl/logs");
-        const logs = await response.text();
-
-        if (box.textContent != logs) {
-          box.textContent = logs;
-          box.scrollTop = box.scrollHeight;
-        }
-      }
-
-      fetchLogs();
-
-      setInterval(fetchLogs, 1000);
-
-      if (localStorage.getItem("logs") == "shown") {
-        toggleLogs();
-      }
-
-      window.onbeforeunload = function(event) {
-        saveBox();
       }
 
       function loadBox() {
@@ -289,6 +277,10 @@
         let boxPos = box.getBoundingClientRect();
         sessionStorage.setItem("boxHeight", boxPos.height);
         sessionStorage.setItem("scrollPos", box.scrollTop);
+      }
+
+      window.onbeforeunload = function(event) {
+        saveBox();
       }
     </script>
   </body>
