@@ -17,11 +17,6 @@ from yt_dlp import version as ydl_version
 
 templates = Jinja2Templates(directory="templates")
 
-# async def update_log(scope, receive, send):
-#     assert scope["type"] == "http"
-#     response = FileResponse(log_file)
-#     await response(scope, receive, send)
-
 
 async def dl_queue_list(request):
     return templates.TemplateResponse(
@@ -45,25 +40,14 @@ async def q_put(request):
     options = {"format": form.get("format")}
 
     if not url:
-        logging.error("No URL provided.")
+        logger.error("No URL provided.")
         return JSONResponse(
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
     task = BackgroundTask(download, url, options)
 
-    logging.info("Added URL to the download queue: %s", url)
-
-    # with open(log_file, "r") as file:
-    #     log = file.read()
-
-    # return templates.TemplateResponse(
-    #     "index.html",
-    #     {
-    #         "request": request,
-    #         "log": log,
-    #     },
-    # )
+    logger.info("Added URL to the download queue: %s", url)
 
     if not ui:
         return JSONResponse(
@@ -85,16 +69,16 @@ def update():
         output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "gallery_dl"]
         )
-        logging.info(output.decode("utf-8"))
+        logger.info(output.decode("utf-8"))
     except subprocess.CalledProcessError as e:
-        logging.error(e.output.decode("utf-8"))
+        logger.error(e.output.decode("utf-8"))
     try:
         output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"]
         )
-        logging.info(output.decode("utf-8"))
+        logger.info(output.decode("utf-8"))
     except subprocess.CalledProcessError as e:
-        logging.error(e.output.decode("utf-8"))
+        logger.error(e.output.decode("utf-8"))
 
 
 async def log_route(request):
@@ -124,7 +108,7 @@ def config_remove(path, key=None, value=None):
             try:
                 _list.remove(entry)
             except Exception as e:
-                logging.error("Exception: %s", str(e))
+                logger.error("Exception: %s", str(e))
             else:
                 removed_entries.append(entry)
 
@@ -144,7 +128,7 @@ def config_remove(path, key=None, value=None):
             try:
                 _dict.pop(entry)
             except Exception as e:
-                logging.error("Exception: %s", str(e))
+                logger.error("Exception: %s", str(e))
             else:
                 removed_entries.append(entry)
 
@@ -230,20 +214,20 @@ def download(url, request_options):
             formatted_output = output.strip()
             formatted_output = remove_ansi_escape_sequences(formatted_output)
             if "Added URL" in formatted_output:
-                logging.info(formatted_output)
+                logger.info(formatted_output)
             if formatted_output.startswith("#"):
-                logging.error("File already exists.")
+                logger.error("File already exists.")
 
     stderr_output = process.stderr.read()
     if stderr_output:
         stderr_output = remove_ansi_escape_sequences(stderr_output.strip())
-        logging.error(stderr_output)
+        logger.error(stderr_output)
 
     exit_code = process.wait()
     if exit_code == 0:
-        logging.info("Download task completed.")
+        logger.info("Download task completed.")
     else:
-        logging.error(f"Download failed with exit code: {exit_code}")
+        logger.error(f"Download failed with exit code: {exit_code}")
 
     return exit_code
 
@@ -262,18 +246,9 @@ app = Starlette(debug=True, routes=routes)
 log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
 os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format="%(asctime)s [%(levelname)s] | %(message)s",
-#     datefmt="%d/%m/%Y %H:%M",
-#     handlers=[
-#         logging.FileHandler(log_file),
-#         logging.StreamHandler(sys.stdout)
-#     ]
-# )
-
-logger_root = logging.getLogger()
-logger_root.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
 formatter = logging.Formatter(
     "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
@@ -287,13 +262,8 @@ handler_file = logging.FileHandler(log_file)
 handler_file.setLevel(logging.INFO)
 handler_file.setFormatter(formatter)
 
-# handler_web = logging.HTTPHandler("0.0.0.0", "/q", method="POST")
-# handler_web.setLevel(logging.INFO)
-# handler_web.setFormatter(formatter)
-
-logger_root.addHandler(handler_console)
-logger_root.addHandler(handler_file)
-# logger_root.addHandler(handler_web)
+logger.addHandler(handler_console)
+logger.addHandler(handler_file)
 
 # # load config before setting up logging
 # config.load()
