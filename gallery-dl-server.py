@@ -213,10 +213,10 @@ def download(url, request_options):
         if output:
             formatted_output = output.strip()
             formatted_output = remove_ansi_escape_sequences(formatted_output)
-            if "Added URL" in formatted_output:
-                logger.info(formatted_output)
             if formatted_output.startswith("#"):
                 logger.error("File already exists.")
+            else:
+                logger.info(formatted_output)
 
     stderr_output = process.stderr.read()
     if stderr_output:
