@@ -254,7 +254,7 @@ formatter = logging.Formatter(
     "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
 )
 
-handler_console = logging.StreamHandler(sys.stdout)
+handler_console = logging.StreamHandler(sys.stderr)
 handler_console.setLevel(logging.INFO)
 handler_console.setFormatter(formatter)
 
