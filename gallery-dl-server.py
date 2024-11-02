@@ -1,15 +1,18 @@
+import os
 import sys
 import subprocess
+import logging
+import re
 
 from starlette.status import HTTP_303_SEE_OTHER
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse, FileResponse
 from starlette.routing import Route, Mount
 from starlette.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 
-from gallery_dl import config, job, version as gdl_version
+from gallery_dl import config, version as gdl_version
 from yt_dlp import version as ydl_version
 
 templates = Jinja2Templates(directory="templates")
@@ -37,18 +40,20 @@ async def q_put(request):
     options = {"format": form.get("format")}
 
     if not url:
+        logger.error("No URL provided.")
         return JSONResponse(
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
     task = BackgroundTask(download, url, options)
 
-    print("Added url " + url + " to the download queue")
+    logger.info("Added URL to the download queue: %s", url)
 
     if not ui:
         return JSONResponse(
             {"success": True, "url": url, "options": options}, background=task
         )
+
     return RedirectResponse(
         url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
     )
@@ -56,8 +61,7 @@ async def q_put(request):
 
 async def update_route(scope, receive, send):
     task = BackgroundTask(update)
-
-    return JSONResponse({"output": "Initiated package update"}, background=task)
+    return JSONResponse({"output": "Initiated package update."}, background=task)
 
 
 def update():
@@ -65,18 +69,20 @@ def update():
         output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "gallery_dl"]
         )
-
-        print(output.decode("utf-8"))
+        logger.info(output.decode("utf-8"))
     except subprocess.CalledProcessError as e:
-        print(e.output)
+        logger.error(e.output.decode("utf-8"))
     try:
         output = subprocess.check_output(
             [sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"]
         )
-
-        print(output.decode("utf-8"))
+        logger.info(output.decode("utf-8"))
     except subprocess.CalledProcessError as e:
-        print(e.output)
+        logger.error(e.output.decode("utf-8"))
+
+
+async def log_route(request):
+    return FileResponse(log_file)
 
 
 def config_remove(path, key=None, value=None):
@@ -102,7 +108,7 @@ def config_remove(path, key=None, value=None):
             try:
                 _list.remove(entry)
             except Exception as e:
-                print("Exception: " + str(e))
+                logger.error("Exception: %s", str(e))
             else:
                 removed_entries.append(entry)
 
@@ -122,7 +128,7 @@ def config_remove(path, key=None, value=None):
             try:
                 _dict.pop(entry)
             except Exception as e:
-                print("Exception: " + str(e))
+                logger.error("Exception: %s", str(e))
             else:
                 removed_entries.append(entry)
 
@@ -185,11 +191,45 @@ def config_update(request_options):
         )
 
 
+def remove_ansi_escape_sequences(text):
+    ansi_escape_pattern = re.compile(r"\x1B\[[0-?9;]*[mGKH]")
+    return ansi_escape_pattern.sub("", text)
+
+
 def download(url, request_options):
     config.clear()
     config.load()
     config_update(request_options)
-    job.DownloadJob(url).run()
+
+    cmd = ["gallery-dl", url]
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+
+    while True:
+        output = process.stdout.readline()
+        if output == "" and process.poll() is not None:
+            break
+        if output:
+            formatted_output = output.strip()
+            formatted_output = remove_ansi_escape_sequences(formatted_output)
+            if formatted_output.startswith("#"):
+                logger.error("File already exists.")
+            else:
+                logger.info(formatted_output)
+
+    stderr_output = process.stderr.read()
+    if stderr_output:
+        stderr_output = remove_ansi_escape_sequences(stderr_output.strip())
+        logger.error(stderr_output)
+
+    exit_code = process.wait()
+    if exit_code == 0:
+        logger.info("Download task completed.")
+    else:
+        logger.error(f"Download failed with exit code: {exit_code}")
+
+    return exit_code
 
 
 routes = [
@@ -197,10 +237,36 @@ routes = [
     Route("/gallery-dl", endpoint=dl_queue_list),
     Route("/gallery-dl/q", endpoint=q_put, methods=["POST"]),
     Route("/gallery-dl/update", endpoint=update_route, methods=["PUT"]),
+    Route("/gallery-dl/logs", endpoint=log_route),
     Mount("/icons", StaticFiles(directory="icons"), name="icons"),
 ]
 
 app = Starlette(debug=True, routes=routes)
+
+log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+logger_root = logging.getLogger()
+logger_root.setLevel(logging.INFO)
+
+formatter = logging.Formatter(
+    "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
+)
+
+handler_console = logging.StreamHandler(sys.stderr)
+handler_console.setLevel(logging.INFO)
+handler_console.setFormatter(formatter)
+
+handler_file = logging.FileHandler(log_file)
+handler_file.setLevel(logging.INFO)
+handler_file.setFormatter(formatter)
+
+logger_root.addHandler(handler_console)
+logger_root.addHandler(handler_file)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.propagate = True
 
 # print("\nUpdating gallery-dl and yt-dlp to the latest version . . . \n")
 # update()
