@@ -243,29 +243,53 @@ routes = [
 
 app = Starlette(debug=True, routes=routes)
 
-log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-logger_root = logging.getLogger()
-logger_root.setLevel(logging.INFO)
+class LogFilter(logging.Filter):
+    """Filters (lets through) all messages with level < LEVEL"""
+
+    def __init__(self, level):
+        self.level = level
+
+    def filter(self, record):
+        return record.levelno < self.level
+
+
+MIN_LEVEL = logging.DEBUG
+
+MIN_LEVEL_STDOUT = MIN_LEVEL
+
+MIN_LEVEL_STDERR = logging.WARNING
+
+log_filter = LogFilter(MIN_LEVEL_STDERR)
 
 formatter = logging.Formatter(
     "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
 )
 
-handler_console = logging.StreamHandler(sys.stderr)
-handler_console.setLevel(logging.INFO)
-handler_console.setFormatter(formatter)
+handler_console_stdout = logging.StreamHandler(sys.stdout)
+handler_console_stdout.addFilter(log_filter)
+handler_console_stdout.setLevel(MIN_LEVEL_STDOUT)
+handler_console_stdout.setFormatter(formatter)
+
+handler_console_stderr = logging.StreamHandler(sys.stderr)
+handler_console_stderr.setLevel(max(MIN_LEVEL_STDOUT, MIN_LEVEL_STDERR))
+handler_console_stderr.setFormatter(formatter)
+
+log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
 handler_file = logging.FileHandler(log_file)
-handler_file.setLevel(logging.INFO)
+handler_file.setLevel(MIN_LEVEL)
 handler_file.setFormatter(formatter)
 
-logger_root.addHandler(handler_console)
+logger_root = logging.getLogger()
+logger_root.setLevel(MIN_LEVEL)
+logger_root.addHandler(handler_console_stdout)
+logger_root.addHandler(handler_console_stderr)
 logger_root.addHandler(handler_file)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(MIN_LEVEL)
 logger.propagate = True
 
 # # load config before setting up logging
