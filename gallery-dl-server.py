@@ -219,10 +219,13 @@ def download(url, request_options):
 
     while True:
         output = process.stdout.readline()
+
         if output == "" and process.poll() is not None:
             break
+
         if output:
             formatted_output = remove_ansi_escape_sequences(output.strip())
+
             if formatted_output.startswith("#"):
                 logger.warning(
                     "File already exists and/or its ID is in a download archive."
@@ -233,6 +236,10 @@ def download(url, request_options):
                 logger.warning(formatted_output)
             else:
                 logger.info(formatted_output)
+
+            if "Video should already be available" in formatted_output:
+                process.kill()
+                logger.info("Terminating process as video is not available.")
 
     exit_code = process.wait()
     if exit_code == 0:
