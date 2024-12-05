@@ -37,13 +37,17 @@ async def q_put(request):
     form = await request.form()
     url = form.get("url").strip()
     ui = form.get("ui")
-    options = {"format": form.get("format")}
+    options = {"video-options": form.get("video-opts")}
 
     if not url:
         logger.error("No URL provided.")
-        return JSONResponse(
-            {"success": False, "error": "/q called without a 'url' in form data"}
-        )
+
+        if not ui:
+            return JSONResponse(
+                {"success": False, "error": "/q called without a 'url' in form data"}
+            )
+
+        return RedirectResponse(url="/gallery-dl", status_code=HTTP_303_SEE_OTHER)
 
     task = BackgroundTask(download, url, options)
 
@@ -136,9 +140,9 @@ def config_remove(path, key=None, value=None):
 
 
 def config_update(request_options):
-    requested_format = request_options.get("format", "select")
+    requested_format = request_options.get("video-options", "none-selected")
 
-    if requested_format == "video":
+    if requested_format == "download-video":
         try:
             cmdline_args = (
                 config._config.get("extractor", {})
@@ -174,7 +178,7 @@ def config_update(request_options):
         else:
             config_remove(postprocessors, "key", "FFmpegExtractAudio")
 
-    if requested_format == "audio":
+    if requested_format == "extract-audio":
         config.set(
             ("extractor", "ytdl"),
             "raw-options",
@@ -199,7 +203,14 @@ def remove_ansi_escape_sequences(text):
 def download(url, request_options):
     config.clear()
     config.load()
+
+    logger.info("Reloaded gallery-dl configuration.")
+
     config_update(request_options)
+
+    logger.info(
+        "Requested download with the following overriding options: %s", request_options
+    )
 
     cmd = ["gallery-dl", url]
     process = subprocess.Popen(
@@ -214,7 +225,9 @@ def download(url, request_options):
             formatted_output = output.strip()
             formatted_output = remove_ansi_escape_sequences(formatted_output)
             if formatted_output.startswith("#"):
-                logger.error("File already exists.")
+                logger.warning(
+                    "File already exists and/or its ID is in a download archive."
+                )
             else:
                 logger.info(formatted_output)
 
@@ -243,30 +256,54 @@ routes = [
 
 app = Starlette(debug=True, routes=routes)
 
-log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-logger_root = logging.getLogger()
-logger_root.setLevel(logging.INFO)
+class LogFilter(logging.Filter):
+    """Filters (lets through) all messages with level < LEVEL"""
+
+    def __init__(self, level):
+        self.level = level
+
+    def filter(self, record):
+        return record.levelno < self.level
+
+
+MIN_LEVEL = logging.INFO
+
+MIN_LEVEL_STDOUT = MIN_LEVEL
+
+MIN_LEVEL_STDERR = logging.WARNING
+
+log_filter = LogFilter(MIN_LEVEL_STDERR)
 
 formatter = logging.Formatter(
     "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
 )
 
-handler_console = logging.StreamHandler(sys.stderr)
-handler_console.setLevel(logging.INFO)
-handler_console.setFormatter(formatter)
+handler_console_stdout = logging.StreamHandler(sys.stdout)
+handler_console_stdout.addFilter(log_filter)
+handler_console_stdout.setLevel(MIN_LEVEL_STDOUT)
+handler_console_stdout.setFormatter(formatter)
+
+handler_console_stderr = logging.StreamHandler(sys.stderr)
+handler_console_stderr.setLevel(max(MIN_LEVEL_STDOUT, MIN_LEVEL_STDERR))
+handler_console_stderr.setFormatter(formatter)
+
+log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
 handler_file = logging.FileHandler(log_file)
-handler_file.setLevel(logging.INFO)
+handler_file.setLevel(MIN_LEVEL)
 handler_file.setFormatter(formatter)
 
-logger_root.addHandler(handler_console)
+logger_root = logging.getLogger()
+logger_root.setLevel(MIN_LEVEL)
+logger_root.addHandler(handler_console_stdout)
+logger_root.addHandler(handler_console_stderr)
 logger_root.addHandler(handler_file)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(MIN_LEVEL)
 logger.propagate = True
 
-# print("\nUpdating gallery-dl and yt-dlp to the latest version . . . \n")
+# logger.info("Initiated package update.")
 # update()
