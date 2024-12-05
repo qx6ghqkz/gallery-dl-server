@@ -214,7 +214,7 @@ def download(url, request_options):
 
     cmd = ["gallery-dl", url]
     process = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
 
     while True:
@@ -222,23 +222,21 @@ def download(url, request_options):
         if output == "" and process.poll() is not None:
             break
         if output:
-            formatted_output = output.strip()
-            formatted_output = remove_ansi_escape_sequences(formatted_output)
+            formatted_output = remove_ansi_escape_sequences(output.strip())
             if formatted_output.startswith("#"):
                 logger.warning(
                     "File already exists and/or its ID is in a download archive."
                 )
+            elif "error" in formatted_output.lower():
+                logger.error(formatted_output)
+            elif "warning" in formatted_output.lower():
+                logger.warning(formatted_output)
             else:
                 logger.info(formatted_output)
 
-    stderr_output = process.stderr.read()
-    if stderr_output:
-        stderr_output = remove_ansi_escape_sequences(stderr_output.strip())
-        logger.error(stderr_output)
-
     exit_code = process.wait()
     if exit_code == 0:
-        logger.info("Download task completed.")
+        logger.info("Download task completed with exit code: 0")
     else:
         logger.error(f"Download failed with exit code: {exit_code}")
 
@@ -267,42 +265,40 @@ class LogFilter(logging.Filter):
         return record.levelno < self.level
 
 
-MIN_LEVEL = logging.DEBUG
+log_level = logging.INFO
+log_level_stdout = log_level
+log_level_stderr = logging.WARNING
 
-MIN_LEVEL_STDOUT = MIN_LEVEL
+log_filter = LogFilter(log_level_stderr)
 
-MIN_LEVEL_STDERR = logging.WARNING
-
-log_filter = LogFilter(MIN_LEVEL_STDERR)
-
-formatter = logging.Formatter(
+log_formatter = logging.Formatter(
     "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
-
-handler_console_stdout = logging.StreamHandler(sys.stdout)
-handler_console_stdout.addFilter(log_filter)
-handler_console_stdout.setLevel(MIN_LEVEL_STDOUT)
-handler_console_stdout.setFormatter(formatter)
-
-handler_console_stderr = logging.StreamHandler(sys.stderr)
-handler_console_stderr.setLevel(max(MIN_LEVEL_STDOUT, MIN_LEVEL_STDERR))
-handler_console_stderr.setFormatter(formatter)
 
 log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
 os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
+handler_console_stdout = logging.StreamHandler(sys.stdout)
+handler_console_stdout.addFilter(log_filter)
+handler_console_stdout.setLevel(log_level_stdout)
+handler_console_stdout.setFormatter(log_formatter)
+
+handler_console_stderr = logging.StreamHandler(sys.stderr)
+handler_console_stderr.setLevel(max(log_level_stdout, log_level_stderr))
+handler_console_stderr.setFormatter(log_formatter)
+
 handler_file = logging.FileHandler(log_file)
-handler_file.setLevel(MIN_LEVEL)
-handler_file.setFormatter(formatter)
+handler_file.setLevel(log_level)
+handler_file.setFormatter(log_formatter)
 
 logger_root = logging.getLogger()
-logger_root.setLevel(MIN_LEVEL)
+logger_root.setLevel(log_level)
 logger_root.addHandler(handler_console_stdout)
 logger_root.addHandler(handler_console_stderr)
 logger_root.addHandler(handler_file)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(MIN_LEVEL)
+logger.setLevel(log_level)
 logger.propagate = True
 
 # logger.info("Initiated package update.")
