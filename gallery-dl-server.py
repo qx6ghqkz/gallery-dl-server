@@ -276,7 +276,7 @@ MIN_LEVEL_STDERR = logging.WARNING
 log_filter = LogFilter(MIN_LEVEL_STDERR)
 
 formatter = logging.Formatter(
-    "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
+    "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
 
 handler_console_stdout = logging.StreamHandler(sys.stdout)
