@@ -245,13 +245,13 @@
           btn.innerText = "Hide Logs";
           box.style.display = "inline";
           loadBox();
-          localStorage.setItem("logs","shown");
+          localStorage.setItem("logs", "shown");
         }
         else {
           saveBox();
           btn.innerText = "Show Logs";
           box.style.display = "none";
-          localStorage.setItem("logs","hidden");
+          localStorage.setItem("logs", "hidden");
         }
       }
 
@@ -262,9 +262,10 @@
           box.style.height = sessionStorage.getItem("boxHeight") + "px";
         }
         else {
-          box.scrollTop = box.scrollHeight;
+          box.style.height = "";
         }
-        if ("scrollPos" in sessionStorage && sessionStorage.getItem("scrollPos") != "0") {
+
+        if ("scrollPos" in sessionStorage) {
           box.scrollTop = sessionStorage.getItem("scrollPos");
         }
         else {
@@ -280,7 +281,9 @@
       }
 
       window.onbeforeunload = function(event) {
-        saveBox();
+        if (localStorage.getItem("logs") == "shown") {
+          saveBox();
+        }
       }
     </script>
   </body>
