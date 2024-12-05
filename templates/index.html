@@ -148,11 +148,11 @@
               autofocus
             />
 
-            <select class="form-select" name="format">
-              <optgroup label="Video Options (override loaded configuration)">
-                <option value="select" selected>Select</option>
-                <option value="video">Download Videos</option>
-                <option value="audio">Extract Audio Only</option>
+            <select class="form-select" name="video-opts">
+              <optgroup label="Video Options (overrides loaded configuration)">
+                <option value="none-selected" selected>Select</option>
+                <option value="download-video">Download Videos</option>
+                <option value="extract-audio">Extract Audio Only</option>
               </optgroup>
             </select>
 
@@ -245,13 +245,13 @@
           btn.innerText = "Hide Logs";
           box.style.display = "inline";
           loadBox();
-          localStorage.setItem("logs","shown");
+          localStorage.setItem("logs", "shown");
         }
         else {
           saveBox();
           btn.innerText = "Show Logs";
           box.style.display = "none";
-          localStorage.setItem("logs","hidden");
+          localStorage.setItem("logs", "hidden");
         }
       }
 
@@ -262,9 +262,10 @@
           box.style.height = sessionStorage.getItem("boxHeight") + "px";
         }
         else {
-          box.scrollTop = box.scrollHeight;
+          box.style.height = "";
         }
-        if ("scrollPos" in sessionStorage && sessionStorage.getItem("scrollPos") != "0") {
+
+        if ("scrollPos" in sessionStorage) {
           box.scrollTop = sessionStorage.getItem("scrollPos");
         }
         else {
@@ -280,7 +281,9 @@
       }
 
       window.onbeforeunload = function(event) {
-        saveBox();
+        if (localStorage.getItem("logs") == "shown") {
+          saveBox();
+        }
       }
     </script>
   </body>

@@ -37,13 +37,17 @@ async def q_put(request):
     form = await request.form()
     url = form.get("url").strip()
     ui = form.get("ui")
-    options = {"format": form.get("format")}
+    options = {"video-options": form.get("video-opts")}
 
     if not url:
         logger.error("No URL provided.")
-        return JSONResponse(
-            {"success": False, "error": "/q called without a 'url' in form data"}
-        )
+
+        if not ui:
+            return JSONResponse(
+                {"success": False, "error": "/q called without a 'url' in form data"}
+            )
+
+        return RedirectResponse(url="/gallery-dl", status_code=HTTP_303_SEE_OTHER)
 
     task = BackgroundTask(download, url, options)
 
@@ -136,9 +140,9 @@ def config_remove(path, key=None, value=None):
 
 
 def config_update(request_options):
-    requested_format = request_options.get("format", "select")
+    requested_format = request_options.get("video-options", "none-selected")
 
-    if requested_format == "video":
+    if requested_format == "download-video":
         try:
             cmdline_args = (
                 config._config.get("extractor", {})
@@ -174,7 +178,7 @@ def config_update(request_options):
         else:
             config_remove(postprocessors, "key", "FFmpegExtractAudio")
 
-    if requested_format == "audio":
+    if requested_format == "extract-audio":
         config.set(
             ("extractor", "ytdl"),
             "raw-options",
@@ -199,7 +203,14 @@ def remove_ansi_escape_sequences(text):
 def download(url, request_options):
     config.clear()
     config.load()
+
+    logger.info("Reloaded gallery-dl configuration.")
+
     config_update(request_options)
+
+    logger.info(
+        "Requested download with the following overriding options: %s", request_options
+    )
 
     cmd = ["gallery-dl", url]
     process = subprocess.Popen(
@@ -265,7 +276,7 @@ MIN_LEVEL_STDERR = logging.WARNING
 log_filter = LogFilter(MIN_LEVEL_STDERR)
 
 formatter = logging.Formatter(
-    "%(asctime)s [%(levelname)s] %(message)s", datefmt="%d/%m/%Y %H:%M"
+    "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
 
 handler_console_stdout = logging.StreamHandler(sys.stdout)
@@ -294,16 +305,5 @@ logger = logging.getLogger(__name__)
 logger.setLevel(MIN_LEVEL)
 logger.propagate = True
 
-# # load config before setting up logging
-# config.load()
-# # initialize logging and set up logging handler to stderr
-# output.initialize_logging(logging.INFO)
-# # apply config options to stderr handler and create file handler
-# output.configure_logging(logging.INFO)
-# # create unsupported-file handler
-# output.setup_logging_handler("unsupportedfile", fmt="{message}")
-
-# logger_gallery_dl = logging.getLogger("gallery-dl")
-
-# print("\nUpdating gallery-dl and yt-dlp to the latest version . . . \n")
+# logger.info("Initiated package update.")
 # update()
