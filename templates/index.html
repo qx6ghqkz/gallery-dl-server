@@ -70,6 +70,8 @@
 
       div.input-group > select.form-select {
         flex: 0.1 1 100px;
+        max-width: 30%;
+        text-overflow: ellipsis;
       }
 
       #btn-logs {
@@ -78,21 +80,21 @@
 
       #box {
         margin: 12px auto 12px auto;
-	resize: vertical;
-	overflow-y: auto;
+        resize: vertical;
+        overflow-y: auto;
         min-height: 95px;
         height: 175px;
-	width: 85%;
-	border: 1px solid #333333;
-	border-radius: 10px;
-	background-color: #181a1b;
-	padding: 10px;
+        width: 85%;
+        border: 1px solid #333333;
+        border-radius: 10px;
+        background-color: #181a1b;
+        padding: 10px;
         text-align: left;
         color: #dedad6;
         font-family: monospace;
-	font-size: 12px;
+        font-size: 12px;
         line-height: 16px;
-	scrollbar-color: #454a4d #202324;
+        scrollbar-color: #454a4d #202324;
       }
 
       textarea {
@@ -143,12 +145,13 @@
               type="url"
               class="form-control"
               placeholder="URL"
+              title="Enter URL"
               aria-label="URL"
               aria-describedby="button-submit"
               autofocus
             />
 
-            <select class="form-select" name="video-opts">
+            <select class="form-select" name="video-opts" title="Select Options">
               <optgroup label="Video Options (overrides loaded configuration)">
                 <option value="none-selected" selected>Select</option>
                 <option value="download-video">Download Videos</option>
@@ -198,10 +201,6 @@
         showCloseButton: true,
         closeButtonHtml: "&times;",
         target: "body",
-        backdrop: false,
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-        stopKeydownPropagation: true,
         timer: 3000,
         timerProgressBar: true,
         toast: true,
@@ -224,12 +223,22 @@
 
       async function fetchLogs() {
         const box = document.getElementById("box");
-        const response = await fetch("gallery-dl/logs");
-        const logs = await response.text();
 
-        if (box.textContent != logs) {
-          box.textContent = logs;
-          box.scrollTop = box.scrollHeight;
+        try {
+          const response = await fetch("/gallery-dl/logs");
+
+          if (!response.ok) {
+            throw new Error("Network response was not OK.");
+          }
+          const logs = await response.text();
+
+          if (box.textContent != logs) {
+            box.textContent = logs;
+            box.scrollTop = box.scrollHeight;
+          }
+        }
+        catch (error) {
+          console.error("Fetch error:", error.message);
         }
       }
 
