@@ -255,7 +255,7 @@ routes = [
     Route("/gallery-dl", endpoint=dl_queue_list),
     Route("/gallery-dl/q", endpoint=q_put, methods=["POST"]),
     Route("/gallery-dl/update", endpoint=update_route, methods=["PUT"]),
-    Route("/gallery-dl/logs", endpoint=log_route),
+    Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
     Mount("/icons", StaticFiles(directory="icons"), name="icons"),
 ]
 
