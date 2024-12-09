@@ -187,7 +187,7 @@
 
     <script>
       const urlParams = new URLSearchParams(window.location.search);
-      const added = urlParams.get('added');
+      const added = urlParams.get("added");
 
       const Success = Swal.mixin({
         animation: true,
@@ -225,11 +225,19 @@
         const box = document.getElementById("box");
 
         try {
-          const response = await fetch("/gallery-dl/logs");
+          const response = await fetch("/gallery-dl/logs", {
+            method: "GET",
+            headers: {
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "Pragma": "no-cache",
+              "Expires": "0"
+            }
+          });
 
           if (!response.ok) {
-            throw new Error("Network response was not OK.");
+            throw new Error(`Response status: ${response.status}`);
           }
+
           const logs = await response.text();
 
           if (box.textContent != logs) {
@@ -238,7 +246,7 @@
           }
         }
         catch (error) {
-          console.error("Fetch error:", error.message);
+          console.error(error.message);
         }
       }
 
@@ -284,7 +292,7 @@
 
       function saveBox() {
         const box = document.getElementById("box");
-        let boxPos = box.getBoundingClientRect();
+        const boxPos = box.getBoundingClientRect();
         sessionStorage.setItem("boxHeight", boxPos.height);
         sessionStorage.setItem("scrollPos", box.scrollTop);
       }
