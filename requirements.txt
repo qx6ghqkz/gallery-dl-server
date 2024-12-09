@@ -1,5 +1,5 @@
 aiofiles==24.1.0
-gallery_dl==1.28.0
+gallery_dl==1.28.1
 Jinja2==3.1.4
 python-multipart==0.0.19
 requests==2.32.3
