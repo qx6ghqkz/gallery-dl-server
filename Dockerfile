@@ -1,7 +1,3 @@
-#
-# gallery-dl-server Dockerfile
-#
-
 FROM python:3.12-alpine
 
 RUN apk add --no-cache \
@@ -11,16 +7,11 @@ RUN apk add --no-cache \
 
 WORKDIR /usr/src/app
 
-RUN python -m venv venv
-
-ENV PATH="/usr/src/app/venv/bin:$PATH"
-
 COPY requirements.txt .
 
-RUN apk add --no-cache --virtual build-dependencies gcc libc-dev make \
-  && pip install --no-cache-dir --upgrade pip \
+RUN apk add --no-cache --virtual build-deps gcc libc-dev make \
   && pip install --no-cache-dir -r requirements.txt \
-  && apk del build-dependencies
+  && apk del build-deps
 
 COPY . .
 
@@ -30,22 +21,16 @@ EXPOSE $CONTAINER_PORT
 
 VOLUME ["/gallery-dl"]
 
-ENV USER=app
-ENV GROUP=$USER
+ENV USER=appuser
+ENV GROUP=appgroup
 ENV UID=1000
-ENV GID=$UID
+ENV GID=1000
 
-RUN addgroup --gid "$GID" "$GROUP" \
-  && adduser --disabled-password --gecos "" --home "$(pwd)" --ingroup "$GROUP" --no-create-home --uid "$UID" $USER
-
-RUN mkdir -p /.cache/pip \
-  && mkdir /.local
-
-RUN chown -R $USER:$GROUP . \
-  && chown -R $USER:$GROUP /.cache/pip \
-  && chown -R $USER:$GROUP /.local
-
-RUN chmod +x ./start.sh
+RUN addgroup --gid $GID $GROUP \
+  && adduser --disabled-password --gecos "" --home $(pwd) --no-create-home --ingroup $GROUP --uid $UID $USER \
+  && mkdir -p /.cache/pip /.local \
+  && chown -R $UID:$GID . /.cache/pip /.local \
+  && chmod +x ./start.sh
 
 USER $USER
 
