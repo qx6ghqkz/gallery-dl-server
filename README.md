@@ -17,11 +17,12 @@ This example uses the `docker run` command to create the container to run the ap
 ```shell
 docker run -d \
   --name gallery-dl-server \
-  --user 1000:1000 \
   -p 9080:9080 \
-  --mount type=bind,source="/path/to/data",target=/etc \
+  -e UID=1000 \
+  -e GID=1000 \
+  --mount type=bind,source="/path/to/config",target=/config \
   --mount type=bind,source="/path/to/downloads",target=/gallery-dl \
-  --restart unless-stopped \
+  --restart on-failure \
   qx6ghqkz/gallery-dl-server:latest
 ```
 
@@ -37,25 +38,29 @@ services:
     image: qx6ghqkz/gallery-dl-server:latest
     container_name: gallery-dl-server
     network_mode: container:vpn
-    user: 1000:1000
+    environment:
+      - UID=1000
+      - GID=1000
     volumes:
       - type: bind
-        source: "/path/to/data"
-        target: /etc
+        source: "/path/to/config"
+        target: /config
       - type: bind
         source: "/path/to/downloads"
         target: /gallery-dl
-    restart: unless-stopped
+    restart: on-failure
 ```
 
-**Important**: Make sure to mount the directory containing the config file rather than the file itself. This ensures changes to the config file will be picked up without having to restart the Docker container. The server loads all changes made to the config file before each download, but if the file is mounted directly, in order to ensure modifications are propagated to the Docker container while it is still running, you need to make sure your text editor saves changes to the file directly instead of using a temp-replace method (nano should work). More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
+**Important**: Make sure you mount the directory containing the config file rather than the file itself. This ensures changes to the config file are propagated to the running Docker container and you will not need to restart the container. More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
+
+You can use the environment variables `UID` and `GID` to change the user ID and group ID of the user running the server process. This is important because downloaded files will be owned by this user. Make sure the IDs match those of the user on your host system. The default `UID:GID` is `1000:1000` when left unspecified.
 
 ### Python
 
-If you have Python ^3.6.0 installed in your PATH you can simply run like this.
+If you have Python ^3.6.0 installed in your PATH you can simply run like so. The -u flag is necessary to catch the output immediately.
 
 ```shell
-python3 -m uvicorn gallery-dl-server:app --port 9080
+python3 -u -m uvicorn gallery-dl-server:app --port 9080
 ```
 
 ### Port Mapping
@@ -101,15 +106,15 @@ services:
 
 Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl#configuration).
 
-The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file (gallery-dl.conf or config.json depending on the location).
+The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file.
 
-The target config location used in the examples is `/etc/gallery-dl.conf`. A default configuration file for use with gallery-dl-server has been provided ([gallery-dl.conf](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf)).
+The server uses a custom target config location of `/config/gallery-dl.conf`. A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf) for use with gallery-dl-server has been provided.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 
 Any additional directories specified in the configuration file must also be mounted inside the Docker container, for example if you specify a cookies file location then make sure that location is accessible from within the Docker container.
 
-It is recommended to place any additional files such as archive, cache and cookies files inside the same `data` directory as the config file.
+It is recommended you place any additional files such as archive, cache and cookies files inside the same `config` directory as `gallery-dl.conf` and then mount that directory to `/config` inside the container, as in the examples.
 
 ## Usage
 

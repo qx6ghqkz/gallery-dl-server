@@ -3,6 +3,8 @@ FROM python:3.12-alpine
 RUN apk add --no-cache \
   bash \
   ffmpeg \
+  shadow \
+  su-exec \
   tzdata
 
 WORKDIR /usr/src/app
@@ -26,12 +28,10 @@ ENV GROUP=appgroup
 ENV UID=1000
 ENV GID=1000
 
-RUN addgroup --gid $GID $GROUP \
-  && adduser --disabled-password --gecos "" --home $(pwd) --no-create-home --ingroup $GROUP --uid $UID $USER \
+RUN groupadd --gid $GID $GROUP \
+  && useradd --home-dir $(pwd) --no-create-home --shell /bin/sh --gid $GID --uid $UID $USER \
   && mkdir -p /.cache/pip /.local \
   && chown -R $UID:$GID . /.cache/pip /.local \
   && chmod +x ./start.sh
-
-USER $USER
 
 CMD ["./start.sh"]
