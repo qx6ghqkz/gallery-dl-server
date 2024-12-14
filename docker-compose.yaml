@@ -1,6 +1,6 @@
 #
 # Docker Compose template using gluetun as a VPN in the same container stack.
-# In this example, `gallery-dl.conf` is located inside the `data` folder in the same directory as the Compose file.
+# In this example, `gallery-dl.conf` is located inside the `config` folder in the same directory as the Compose file.
 # The environment variables for your VPN configuration can go in this file or a separate `.env` file in the same directory,
 # or specify the location with `docker compose --env-file <location> up -d`.
 #
@@ -17,12 +17,12 @@ services:
       - GID=1000
     volumes:
       - type: bind
-        source: ./data
-        target: /etc
+        source: ./config
+        target: /config
       - type: bind
         source: ~/Downloads/gallery-dl
         target: /gallery-dl
-    restart: unless-stopped
+    restart: on-failure
 
   gluetun:
     image: qmcgaw/gluetun:latest
