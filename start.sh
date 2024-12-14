@@ -18,7 +18,7 @@ mod_ids () {
   groupmod --non-unique --gid "$GID" appgroup >/dev/null 2>&1
   usermod --non-unique --gid "$GID" --uid "$UID" appuser >/dev/null 2>&1
 
-  chown --quiet -R "$UID:$GID" /usr/src/app /.cache/pip /.local
+  chown -R "$UID:$GID" /usr/src/app /.cache/pip /.local >/dev/null 2>&1
 }
 
 init () {
@@ -54,12 +54,19 @@ log() {
 }
 
 start() {
+  get_conf
   if [[ $1 -eq 0 ]]; then
     exec su-exec appuser uvicorn gallery-dl-server:app --host 0.0.0.0 --port "$CONTAINER_PORT" --log-level info --no-access-log
   elif [[ $1 -eq 1 ]]; then
     exec uvicorn gallery-dl-server:app --host 0.0.0.0 --port "$CONTAINER_PORT" --log-level info --no-access-log
   else
     exit 0
+  fi
+}
+
+get_conf() {
+  if [[ -d /config ]]; then
+    mv -n /usr/src/app/gallery-dl.conf /config >/dev/null 2>&1
   fi
 }
 

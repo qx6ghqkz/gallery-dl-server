@@ -7,10 +7,6 @@ scripts/
 *.cmd
 *.ps1
 
-# Config files
-*.conf
-*.json
-
 # Images
 images/
 

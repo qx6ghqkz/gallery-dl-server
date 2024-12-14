@@ -9,6 +9,7 @@ on:
       - 'templates/**'
       - '**.py'
       - 'Dockerfile'
+      - 'gallery-dl.conf'
       - 'requirements.txt'
       - 'start.sh'
     tags:
