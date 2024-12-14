@@ -212,7 +212,7 @@ def download(url, request_options):
         "Requested download with the following overriding options: %s", request_options
     )
 
-    cmd = ["gallery-dl", url]
+    cmd = ["gallery-dl", "--config", "/config/gallery-dl.conf", url]
     process = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
