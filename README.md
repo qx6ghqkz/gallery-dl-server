@@ -108,7 +108,7 @@ Configuration of gallery-dl is as documented in the [official documentation](htt
 
 The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file.
 
-The server uses a custom target config location of `/config/gallery-dl.conf`. A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf) for use with gallery-dl-server has been provided.
+The server uses a custom target config location of `/config/gallery-dl.conf`. A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if the file does not already exist in that location.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 

@@ -226,9 +226,10 @@ def download(url, request_options):
         if output:
             formatted_output = remove_ansi_escape_sequences(output.strip())
 
-            if formatted_output.startswith("#"):
+            if formatted_output.startswith("# "):
                 logger.warning(
-                    "File already exists and/or its ID is in a download archive."
+                    "File already exists and/or its ID is in a download archive: %s",
+                    formatted_output.removeprefix("# "),
                 )
             elif "error" in formatted_output.lower():
                 logger.error(formatted_output)
