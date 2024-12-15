@@ -130,16 +130,32 @@ def config_remove(path, key=None, value=None):
 
         for entry in entries:
             try:
-                _dict.pop(entry)
+                val = _dict.pop(entry)
             except Exception as e:
                 logger.error("Exception: %s", str(e))
             else:
-                removed_entries.append(entry)
+                removed_entries.append({entry: val})
 
     return removed_entries
 
 
+def config_set(path, key, value, conf=config._config):
+    """Set the value of property 'key' for this session"""
+    for p in path:
+        try:
+            conf = conf[p]
+        except KeyError:
+            conf[p] = conf = {}
+
+    conf[key] = value
+
+    return {key: conf[key]}
+
+
 def config_update(request_options):
+    removed_entries = []
+    added_entries = []
+
     requested_format = request_options.get("video-options", "none-selected")
 
     if requested_format == "download-video":
@@ -152,8 +168,10 @@ def config_update(request_options):
         except AttributeError:
             pass
         else:
-            config_remove(cmdline_args, None, "--extract-audio")
-            config_remove(cmdline_args, None, "-x")
+            removed_entries.extend(
+                config_remove(cmdline_args, None, "--extract-audio")
+                + config_remove(cmdline_args, None, "-x")
+            )
 
         try:
             raw_options = (
@@ -164,7 +182,7 @@ def config_update(request_options):
         except AttributeError:
             pass
         else:
-            config_remove(raw_options, "writethumbnail", False)
+            removed_entries.extend(config_remove(raw_options, "writethumbnail", False))
 
         try:
             postprocessors = (
@@ -176,10 +194,12 @@ def config_update(request_options):
         except AttributeError:
             pass
         else:
-            config_remove(postprocessors, "key", "FFmpegExtractAudio")
+            removed_entries.extend(
+                config_remove(postprocessors, "key", "FFmpegExtractAudio")
+            )
 
     if requested_format == "extract-audio":
-        config.set(
+        added = config_set(
             ("extractor", "ytdl"),
             "raw-options",
             {
@@ -193,6 +213,9 @@ def config_update(request_options):
                 ],
             },
         )
+        added_entries.append(added)
+
+    return [removed_entries, added_entries]
 
 
 def remove_ansi_escape_sequences(text):
@@ -206,11 +229,17 @@ def download(url, request_options):
 
     logger.info("Reloaded gallery-dl configuration.")
 
-    config_update(request_options)
-
     logger.info(
-        "Requested download with the following overriding options: %s", request_options
+        "Requesting download with the following overriding options: %s", request_options
     )
+
+    entries = config_update(request_options)
+
+    if any(entries[0]):
+        logger.info("Removed entries from the config dict: %s", entries[0])
+
+    if any(entries[1]):
+        logger.info("Added entries to the config dict: %s", entries[1])
 
     cmd = ["gallery-dl", "--config", "/config/gallery-dl.conf", url]
     process = subprocess.Popen(
@@ -240,7 +269,7 @@ def download(url, request_options):
 
             if "Video should already be available" in formatted_output:
                 process.kill()
-                logger.info("Terminating process as video is not available.")
+                logger.warning("Terminating process as video is not available.")
 
     exit_code = process.wait()
     if exit_code == 0:
