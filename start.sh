@@ -66,6 +66,7 @@ start() {
 
 get_conf() {
   if [[ -d /config ]]; then
+    rm -f /config/hosts /config/hostname /config/resolv.conf >/dev/null 2>&1
     mv -n /usr/src/app/gallery-dl.conf /config >/dev/null 2>&1
   fi
 }
