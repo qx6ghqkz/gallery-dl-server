@@ -4,4 +4,9 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
-    target-branch: 'test'
+      time: '04:00'
+    groups:
+      pip-dependencies:
+        patterns:
+          - '*'
+    target-branch: 'main'
