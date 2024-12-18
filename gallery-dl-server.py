@@ -104,7 +104,7 @@ def config_remove(path, key=None, value=None):
                 else:
                     if entry.get(key):
                         entries.append(entry)
-            else:
+            elif value:
                 if entry == value:
                     entries.append(entry)
 
@@ -112,27 +112,28 @@ def config_remove(path, key=None, value=None):
             try:
                 _list.remove(entry)
             except Exception as e:
-                logger.error("Exception: %s", str(e))
+                logger.error("Exception: %s", e)
             else:
                 removed_entries.append(entry)
 
     if isinstance(path, dict):
         _dict = path
 
-        if value:
-            for k, v in _dict.items():
-                if k == key and v == value:
-                    entries.append(k)
-        else:
-            for k in _dict.keys():
-                if k == key:
-                    entries.append(k)
+        if key:
+            if value:
+                for k, v in _dict.items():
+                    if k == key and v == value:
+                        entries.append(k)
+            else:
+                for k in _dict.keys():
+                    if k == key:
+                        entries.append(k)
 
         for entry in entries:
             try:
                 val = _dict.pop(entry)
             except Exception as e:
-                logger.error("Exception: %s", str(e))
+                logger.error("Exception: %s", e)
             else:
                 removed_entries.append({entry: val})
 
