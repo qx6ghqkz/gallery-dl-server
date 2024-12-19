@@ -6,22 +6,20 @@
 #
 
 services:
-  gallery-dl-server:
+  gallery-dl:
     image: qx6ghqkz/gallery-dl-server:latest
-    container_name: gdl-server
+    container_name: gallery-dl
     depends_on:
       - gluetun
     network_mode: service:gluetun
+    # ports:
+    #   - 9080:9080
     environment:
       - UID=1000
       - GID=1000
     volumes:
-      - type: bind
-        source: ./config
-        target: /config
-      - type: bind
-        source: ~/Downloads/gallery-dl
-        target: /gallery-dl
+      - ./config:/config
+      - ~/Downloads/gallery-dl:/gallery-dl
     restart: on-failure
 
   gluetun:
@@ -32,7 +30,7 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      # gallery-dl-server
+      # gallery-dl
       - 9080:9080
     volumes:
       - ~/Documents/gluetun:/gluetun

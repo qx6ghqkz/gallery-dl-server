@@ -16,12 +16,12 @@ This example uses the `docker run` command to create the container to run the ap
 
 ```shell
 docker run -d \
-  --name gallery-dl-server \
+  --name gallery-dl \
   -p 9080:9080 \
   -e UID=1000 \
   -e GID=1000 \
-  --mount type=bind,source="/path/to/config",target=/config \
-  --mount type=bind,source="/path/to/downloads",target=/gallery-dl \
+  -v "/path/to/config:/config" \
+  -v "/path/to/downloads:/gallery-dl" \
   --restart on-failure \
   qx6ghqkz/gallery-dl-server:latest
 ```
@@ -34,20 +34,18 @@ This is an example service definition that could be put in `docker-compose.yaml`
 
 ```yaml
 services:
-  gallery-dl-server:
+  gallery-dl:
     image: qx6ghqkz/gallery-dl-server:latest
-    container_name: gallery-dl-server
+    container_name: gallery-dl
     network_mode: container:vpn
+    # ports:
+    #   - 9080:9080
     environment:
       - UID=1000
       - GID=1000
     volumes:
-      - type: bind
-        source: "/path/to/config"
-        target: /config
-      - type: bind
-        source: "/path/to/downloads"
-        target: /gallery-dl
+      - "/path/to/config:/config"
+      - "/path/to/downloads:/gallery-dl"
     restart: on-failure
 ```
 
@@ -73,17 +71,17 @@ All services defined in the same `docker-compose.yaml` file:
 
 ```yaml
 services:
-  gallery-dl-server:
+  gallery-dl:
     image: qx6ghqkz/gallery-dl-server:latest
-    container_name: gallery-dl-server
+    container_name: gallery-dl
     depends_on:
       - gluetun
     network_mode: service:gluetun
     ...
 
-  gallery-dl-server-2:
+  gallery-dl-2:
     image: qx6ghqkz/gallery-dl-server:latest
-    container_name: gallery-dl-server-2
+    container_name: gallery-dl-2
     environment:
       - CONTAINER_PORT=9090
     depends_on:
@@ -95,9 +93,9 @@ services:
     image: qmcgaw/gluetun:latest
     container_name: gluetun
     ports:
-      # gallery-dl-server
+      # gallery-dl
       - 9080:9080
-      # gallery-dl-server-2
+      # gallery-dl-2
       - 9090:9090
     ...
 ```
