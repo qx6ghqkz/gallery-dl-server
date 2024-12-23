@@ -1,6 +1,6 @@
 aiofiles==24.1.0
-gallery_dl==1.28.1
-Jinja2==3.1.4
+gallery_dl==1.28.2
+Jinja2==3.1.5
 python-multipart==0.0.20
 requests==2.32.3
 starlette==0.42.0
