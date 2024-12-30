@@ -1,6 +1,9 @@
 # Visual Studio
 .vscode/
 
+# Python
+__pycache__/
+
 # Scripts
 scripts/
 *.bat
@@ -28,3 +31,6 @@ Dockerfile
 LICENSE
 README.md
 SECURITY.md
+
+# Misc
+drafts/

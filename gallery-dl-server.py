@@ -1,24 +1,43 @@
 import os
 import sys
 import subprocess
-import logging
 import re
+import shutil
+import time
 
-from starlette.status import HTTP_303_SEE_OTHER
+import output
+
+from contextlib import asynccontextmanager
+
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse, RedirectResponse, FileResponse
-from starlette.routing import Route, Mount
-from starlette.templating import Jinja2Templates
-from starlette.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
+from starlette.responses import RedirectResponse, JSONResponse, FileResponse
+from starlette.routing import Route, Mount
+from starlette.staticfiles import StaticFiles
+from starlette.status import HTTP_303_SEE_OTHER
+from starlette.templating import Jinja2Templates
 
-from gallery_dl import config, version as gdl_version
+from gallery_dl import version as gdl_version
 from yt_dlp import version as ydl_version
 
-templates = Jinja2Templates(directory="templates")
+
+log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
+
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+log = output.initialise_logging(log_file)
+blank = output.get_blank_logger()
+
+blank_sent = False
+
+
+async def redirect(request):
+    return RedirectResponse(url="/gallery-dl")
 
 
 async def dl_queue_list(request):
+    templates = Jinja2Templates(directory="templates")
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -29,18 +48,20 @@ async def dl_queue_list(request):
     )
 
 
-async def redirect(request):
-    return RedirectResponse(url="/gallery-dl")
-
-
 async def q_put(request):
+    global blank_sent
+
+    if not blank_sent:
+        blank.info("")
+        blank_sent = True
+
     form = await request.form()
     url = form.get("url").strip()
     ui = form.get("ui")
     options = {"video-options": form.get("video-opts")}
 
     if not url:
-        logger.error("No URL provided.")
+        log.error("No URL provided.")
 
         if not ui:
             return JSONResponse(
@@ -51,7 +72,7 @@ async def q_put(request):
 
     task = BackgroundTask(download, url, options)
 
-    logger.info("Added URL to the download queue: %s", url)
+    log.info("Added URL to the download queue: %s", url)
 
     if not ui:
         return JSONResponse(
@@ -63,160 +84,63 @@ async def q_put(request):
     )
 
 
-async def update_route(scope, receive, send):
-    task = BackgroundTask(update)
-    return JSONResponse({"output": "Initiated package update."}, background=task)
-
-
-def update():
-    try:
-        output = subprocess.check_output(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "gallery_dl"]
-        )
-        logger.info(output.decode("utf-8"))
-    except subprocess.CalledProcessError as e:
-        logger.error(e.output.decode("utf-8"))
-    try:
-        output = subprocess.check_output(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"]
-        )
-        logger.info(output.decode("utf-8"))
-    except subprocess.CalledProcessError as e:
-        logger.error(e.output.decode("utf-8"))
-
-
 async def log_route(request):
     return FileResponse(log_file)
 
 
-def config_remove(path, key=None, value=None):
-    entries = []
-    removed_entries = []
-
-    if isinstance(path, list):
-        _list = path
-
-        for entry in _list:
-            if key:
-                if value:
-                    if entry.get(key) == value:
-                        entries.append(entry)
-                else:
-                    if entry.get(key):
-                        entries.append(entry)
-            elif value:
-                if entry == value:
-                    entries.append(entry)
-
-        for entry in entries:
-            try:
-                _list.remove(entry)
-            except Exception as e:
-                logger.error("Exception: %s", e)
-            else:
-                removed_entries.append(entry)
-
-    if isinstance(path, dict):
-        _dict = path
-
-        if key:
-            if value:
-                for k, v in _dict.items():
-                    if k == key and v == value:
-                        entries.append(k)
-            else:
-                for k in _dict.keys():
-                    if k == key:
-                        entries.append(k)
-
-        for entry in entries:
-            try:
-                val = _dict.pop(entry)
-            except Exception as e:
-                logger.error("Exception: %s", e)
-            else:
-                removed_entries.append({entry: val})
-
-    return removed_entries
-
-
-def config_set(path, key, value, conf=config._config):
-    """Set the value of property 'key' for this session"""
-    for p in path:
-        try:
-            conf = conf[p]
-        except KeyError:
-            conf[p] = conf = {}
-
-    conf[key] = value
-
-    return {key: conf[key]}
-
-
-def config_update(request_options):
-    removed_entries = []
-    added_entries = []
-
-    requested_format = request_options.get("video-options", "none-selected")
-
-    if requested_format == "download-video":
-        try:
-            cmdline_args = (
-                config._config.get("extractor", {})
-                .get("ytdl", {})
-                .get("cmdline-args", [])
-            )
-        except AttributeError:
-            pass
-        else:
-            removed_entries.extend(
-                config_remove(cmdline_args, None, "--extract-audio")
-                + config_remove(cmdline_args, None, "-x")
-            )
-
-        try:
-            raw_options = (
-                config._config.get("extractor", {})
-                .get("ytdl", {})
-                .get("raw-options", {})
-            )
-        except AttributeError:
-            pass
-        else:
-            removed_entries.extend(config_remove(raw_options, "writethumbnail", False))
-
-        try:
-            postprocessors = (
-                config._config.get("extractor", {})
-                .get("ytdl", {})
-                .get("raw-options", {})
-                .get("postprocessors", [])
-            )
-        except AttributeError:
-            pass
-        else:
-            removed_entries.extend(
-                config_remove(postprocessors, "key", "FFmpegExtractAudio")
-            )
-
-    if requested_format == "extract-audio":
-        added = config_set(
-            ("extractor", "ytdl"),
-            "raw-options",
-            {
-                "writethumbnail": False,
-                "postprocessors": [
-                    {
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": "best",
-                        "preferredquality": 320,
-                    }
-                ],
-            },
+@asynccontextmanager
+async def lifespan(app):
+    yield
+    if os.path.isdir("/config"):
+        os.makedirs("/config/logs", exist_ok=True)
+        shutil.copy2(
+            log_file, "/config/logs/app_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".log"
         )
-        added_entries.append(added)
 
-    return [removed_entries, added_entries]
+
+def download(url, request_options):
+    cmd = [sys.executable, "download.py", url, str(request_options)]
+
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
+
+    while True:
+        if process.stdout:
+            output = process.stdout.readline()
+
+            if output == "" and process.poll() is not None:
+                break
+
+            if output:
+                formatted_output = remove_ansi_escape_sequences(output.rstrip())
+
+                if formatted_output.startswith("# "):
+                    log.warning(
+                        "File already exists and/or its ID is in a download archive: %s",
+                        formatted_output.removeprefix("# "),
+                    )
+                elif "[error]" in formatted_output.lower():
+                    log.error(formatted_output)
+                elif "[warning]" in formatted_output.lower():
+                    log.warning(formatted_output)
+                elif "[debug]" in formatted_output.lower():
+                    log.debug(formatted_output)
+                else:
+                    log.info(formatted_output)
+
+                if "Video should already be available" in formatted_output:
+                    process.kill()
+                    log.warning("Terminating process as video is not available.")
+
+    exit_code = process.wait()
+
+    if exit_code == 0:
+        log.info("Download job completed with exit code: 0")
+    else:
+        log.error("Download job failed with exit code: %s", exit_code)
+
+    return exit_code
 
 
 def remove_ansi_escape_sequences(text):
@@ -224,120 +148,12 @@ def remove_ansi_escape_sequences(text):
     return ansi_escape_pattern.sub("", text)
 
 
-def download(url, request_options):
-    config.clear()
-    config.load()
-
-    logger.info("Reloaded gallery-dl configuration.")
-
-    logger.info(
-        "Requesting download with the following overriding options: %s", request_options
-    )
-
-    entries = config_update(request_options)
-
-    if any(entries[0]):
-        logger.info("Removed entries from the config dict: %s", entries[0])
-
-    if any(entries[1]):
-        logger.info("Added entries to the config dict: %s", entries[1])
-
-    cmd = ["gallery-dl", "--config", "/config/gallery-dl.conf", url]
-    process = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    )
-
-    while True:
-        output = process.stdout.readline()
-
-        if output == "" and process.poll() is not None:
-            break
-
-        if output:
-            formatted_output = remove_ansi_escape_sequences(output.strip())
-
-            if formatted_output.startswith("# "):
-                logger.warning(
-                    "File already exists and/or its ID is in a download archive: %s",
-                    formatted_output.removeprefix("# "),
-                )
-            elif "error" in formatted_output.lower():
-                logger.error(formatted_output)
-            elif "warning" in formatted_output.lower():
-                logger.warning(formatted_output)
-            else:
-                logger.info(formatted_output)
-
-            if "Video should already be available" in formatted_output:
-                process.kill()
-                logger.warning("Terminating process as video is not available.")
-
-    exit_code = process.wait()
-    if exit_code == 0:
-        logger.info("Download task completed with exit code: 0")
-    else:
-        logger.error(f"Download failed with exit code: {exit_code}")
-
-    return exit_code
-
-
 routes = [
-    Route("/", endpoint=redirect),
-    Route("/gallery-dl", endpoint=dl_queue_list),
+    Route("/", endpoint=redirect, methods=["GET"]),
+    Route("/gallery-dl", endpoint=dl_queue_list, methods=["GET"]),
     Route("/gallery-dl/q", endpoint=q_put, methods=["POST"]),
-    Route("/gallery-dl/update", endpoint=update_route, methods=["PUT"]),
     Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
-    Mount("/icons", StaticFiles(directory="icons"), name="icons"),
+    Mount("/icons", app=StaticFiles(directory="icons"), name="icons"),
 ]
 
-app = Starlette(debug=True, routes=routes)
-
-
-class LogFilter(logging.Filter):
-    """Filters (lets through) all messages with level < LEVEL"""
-
-    def __init__(self, level):
-        self.level = level
-
-    def filter(self, record):
-        return record.levelno < self.level
-
-
-log_level = logging.INFO
-log_level_stdout = log_level
-log_level_stderr = logging.WARNING
-
-log_filter = LogFilter(log_level_stderr)
-
-log_formatter = logging.Formatter(
-    "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-)
-
-log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
-
-handler_console_stdout = logging.StreamHandler(sys.stdout)
-handler_console_stdout.addFilter(log_filter)
-handler_console_stdout.setLevel(log_level_stdout)
-handler_console_stdout.setFormatter(log_formatter)
-
-handler_console_stderr = logging.StreamHandler(sys.stderr)
-handler_console_stderr.setLevel(max(log_level_stdout, log_level_stderr))
-handler_console_stderr.setFormatter(log_formatter)
-
-handler_file = logging.FileHandler(log_file)
-handler_file.setLevel(log_level)
-handler_file.setFormatter(log_formatter)
-
-logger_root = logging.getLogger()
-logger_root.setLevel(log_level)
-logger_root.addHandler(handler_console_stdout)
-logger_root.addHandler(handler_console_stderr)
-logger_root.addHandler(handler_file)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(log_level)
-logger.propagate = True
-
-# logger.info("Initiated package update.")
-# update()
+app = Starlette(debug=True, routes=routes, lifespan=lifespan)

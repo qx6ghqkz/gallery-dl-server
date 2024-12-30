@@ -49,9 +49,13 @@ services:
     restart: on-failure
 ```
 
-**Important**: Make sure you mount the directory containing the config file rather than the file itself. This ensures changes to the config file are propagated to the running Docker container and you will not need to restart the container. More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
+#### Important Notes
 
-You can use the environment variables `UID` and `GID` to change the user ID and group ID of the user running the server process. This is important because downloaded files will be owned by this user. Make sure the IDs match those of the user on your host system. The default `UID:GID` is `1000:1000` when left unspecified.
+- Make sure you mount the directory containing the config file rather than the file itself. This ensures changes to the config file are propagated to the running Docker container and you will not need to restart the container. More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
+
+- The output download directory depends on the `base-directory` in your gallery-dl config file. Make sure it is the absolute path `/gallery-dl/` instead of the relative path `./gallery-dl/` or you will need to mount to `/usr/src/app/gallery-dl` instead (not recommended).
+
+- You can use the environment variables `UID` and `GID` to change the user ID and group ID of the user running the server process. This is important because downloaded files will be owned by that user. Make sure the IDs match those of the user on your host system. The default `UID:GID` is `1000:1000` when left unspecified.
 
 ### Python
 
@@ -106,13 +110,18 @@ Configuration of gallery-dl is as documented in the [official documentation](htt
 
 The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file.
 
-The server uses a custom target config location of `/config/gallery-dl.conf`. A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if the file does not already exist in that location.
+### Locations
+
+- `/config/gallery-dl.conf`
+- `/config/config.json`
+
+A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if the file does not already exist in that location.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 
-Any additional directories specified in the configuration file must also be mounted inside the Docker container, for example if you specify a cookies file location then make sure that location is accessible from within the Docker container.
+Any additional locations specified in the configuration file must also exist inside the Docker container. For example, if you specify a cookies file location, make sure that location is accessible from within the Docker container.
 
-It is recommended you place any additional files such as archive, cache and cookies files inside the same `config` directory as `gallery-dl.conf` and then mount that directory to `/config` inside the container, as in the examples.
+It is recommended you place any additional files such as archive, cache and cookies files inside the same directory mounted to `/config` along with the config file.
 
 ## Usage
 
