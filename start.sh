@@ -54,7 +54,7 @@ log() {
 }
 
 start() {
-  get_conf
+  init_conf
   if [[ $1 -eq 0 ]]; then
     exec su-exec appuser uvicorn gallery-dl-server:app --host 0.0.0.0 --port "$CONTAINER_PORT" --log-level info --no-access-log
   elif [[ $1 -eq 1 ]]; then
@@ -64,10 +64,24 @@ start() {
   fi
 }
 
-get_conf() {
-  if [[ -d /config ]]; then
-    rm -f /config/hosts /config/hostname /config/resolv.conf >/dev/null 2>&1
-    mv -n /usr/src/app/gallery-dl.conf /config >/dev/null 2>&1
+init_conf() {
+  dir="/config"
+  files=("gallery-dl.conf" "config.json")
+
+  if [[ -d "$dir" ]]; then
+    rm -f "$dir/hosts" "$dir/hostname" "$dir/resolv.conf" >/dev/null 2>&1
+
+    any_file_exists=false
+    for file in "${files[@]}"; do
+      if [[ -f "$dir/$file" ]]; then
+        any_file_exists=true
+        break
+      fi
+    done
+
+    if ! $any_file_exists; then
+      mv -n /usr/src/app/gallery-dl.conf "$dir" >/dev/null 2>&1
+    fi
   fi
 }
 
