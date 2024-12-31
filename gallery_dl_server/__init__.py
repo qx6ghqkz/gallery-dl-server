@@ -112,31 +112,39 @@ def download(url, options):
 
     while True:
         if process.stdout:
-            output = process.stdout.readline()
+            line = process.stdout.readline()
 
-            if output == "" and process.poll() is not None:
+            if line == "" and process.poll() is not None:
                 break
 
-            if output:
-                formatted_output = remove_ansi_escape_sequences(output.rstrip())
+            if line:
+                formatted_line = remove_ansi_escape_sequences(line.rstrip())
 
-                if formatted_output.startswith("# "):
+                if formatted_line.startswith(output.PREFIX_ERROR):
+                    log.error(
+                        formatted_line.removeprefix(output.PREFIX_ERROR),
+                    )
+                elif formatted_line.startswith(output.PREFIX_WARNING):
+                    log.warning(
+                        formatted_line.removeprefix(output.PREFIX_WARNING),
+                    )
+                elif formatted_line.startswith("# "):
                     log.warning(
                         "File already exists and/or its ID is in a download archive: %s",
-                        formatted_output.removeprefix("# "),
+                        formatted_line.removeprefix("# "),
                     )
-                elif "[error]" in formatted_output.lower():
-                    log.error(formatted_output)
-                elif "[warning]" in formatted_output.lower():
-                    log.warning(formatted_output)
-                elif "[debug]" in formatted_output.lower():
-                    log.debug(formatted_output)
+                elif "[error]" in formatted_line.lower():
+                    log.error(formatted_line)
+                elif "[warning]" in formatted_line.lower():
+                    log.warning(formatted_line)
+                elif "[debug]" in formatted_line.lower():
+                    log.debug(formatted_line)
                 else:
-                    log.info(formatted_output)
+                    log.info(formatted_line)
 
-                if "Video should already be available" in formatted_output:
+                if "Video should already be available" in formatted_line:
                     process.kill()
-                    log.warning("Terminating process as video is not available.")
+                    log.warning("Terminating process as video is not available")
 
     exit_code = process.wait()
 

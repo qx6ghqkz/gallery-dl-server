@@ -4,7 +4,7 @@ from collections.abc import MutableMapping
 
 from gallery_dl import config
 
-from .output import stdout_write
+from .output import stdout_write, PREFIX_ERROR
 
 
 _config = config._config
@@ -34,7 +34,9 @@ def load(_configs):
     if loads > 0:
         stdout_write(f"Loaded gallery-dl configuration file(s): {_files}")
     elif exit_code:
-        stdout_write(f"Unable to load configuration file. Exit code: {exit_code}")
+        stdout_write(
+            f"{PREFIX_ERROR}Unable to load configuration file: Exit code {exit_code}"
+        )
 
         if exit_code == 1:
             stdout_write(f"Valid configuration file locations: {_configs}")
@@ -114,7 +116,7 @@ def remove(path, item=None, key=None, value=None):
             try:
                 _list.remove(entry)
             except Exception as e:
-                stdout_write(f"Exception: {e}")
+                stdout_write(f"{PREFIX_ERROR}Exception: {e}")
             else:
                 removed.append(entry)
 
@@ -135,7 +137,7 @@ def remove(path, item=None, key=None, value=None):
             try:
                 val = _dict.pop(entry)
             except Exception as e:
-                stdout_write(f"Exception: {e}")
+                stdout_write(f"{PREFIX_ERROR}Exception: {e}")
             else:
                 removed.append({entry: val})
 

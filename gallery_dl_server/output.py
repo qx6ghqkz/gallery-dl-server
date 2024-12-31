@@ -8,6 +8,9 @@ LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
 
+PREFIX_ERROR = "_ERROR_"
+PREFIX_WARNING = "_WARNING_"
+
 
 def initialise_logging(file=None, stream=sys.stdout):
     logger = logging.getLogger("gallery-dl-server")

@@ -1,7 +1,7 @@
 import sys
 import ast
 
-from gallery_dl import job
+from gallery_dl import job, exception
 
 from . import config, output
 
@@ -30,7 +30,14 @@ def run(url, options):
     if any(entries[1]):
         output.stdout_write(f"Removed entries from the config dict: {entries[1]}")
 
-    status = job.DownloadJob(url).run()
+    status = 0
+    try:
+        status = job.DownloadJob(url).run()
+    except exception.GalleryDLException as e:
+        status = e.code
+        output.stdout_write(
+            f"{output.PREFIX_ERROR}Exception: {e.__module__}.{type(e).__name__}: {e}"
+        )
 
     return status
 
@@ -133,4 +140,5 @@ def config_update(options):
 
 
 if __name__ == "__main__":
-    run(sys.argv[1], ast.literal_eval(sys.argv[2]))
+    status = run(sys.argv[1], ast.literal_eval(sys.argv[2]))
+    sys.exit(status)

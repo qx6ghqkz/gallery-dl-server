@@ -59,10 +59,16 @@ services:
 
 ### Python
 
-If you have Python ^3.6.0 installed in your PATH you can simply run like so. The -u flag is necessary to catch the output immediately.
+If you have Python 3.9 or above installed and on your PATH, you can simply run the server using the command line. The `-u` flag may be necessary for logs to be captured immediately. On Windows, replace `python3` with `py -3` or `python`.
 
 ```shell
-python3 -u -m uvicorn gallery_dl_server:app --port 9080
+python3 -u -m uvicorn gallery_dl_server:app --host 0.0.0.0 --port 9080 --log-level info --no-access-log
+```
+
+The program can also be run as a package, providing optional environment variable overrides inline. On Windows, this can be done using `set VAR="value" &&` in Command Prompt or `$env:VAR="value";` in PowerShell.
+
+```shell
+HOST="0.0.0.0" PORT="9080" LOG_LEVEL="info" ACCESS_LOG="False" python3 -u -m gallery_dl_server
 ```
 
 ### Port Mapping
@@ -115,7 +121,7 @@ The configuration file must be mounted inside the Docker container in one of the
 - `/config/gallery-dl.conf`
 - `/config/config.json`
 
-A [default configuration file](docs/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if the file does not already exist in that location.
+A [default configuration file](docs/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if no valid config file exists in that location.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 
