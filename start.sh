@@ -56,9 +56,9 @@ log() {
 start() {
   init_conf
   if [[ $1 -eq 0 ]]; then
-    exec su-exec appuser uvicorn gallery-dl-server:app --host 0.0.0.0 --port "$CONTAINER_PORT" --log-level info --no-access-log
+    exec su-exec appuser uvicorn gallery_dl_server:app --host 0.0.0.0 --port "$CONTAINER_PORT" --log-level info --no-access-log
   elif [[ $1 -eq 1 ]]; then
-    exec uvicorn gallery-dl-server:app --host 0.0.0.0 --port "$CONTAINER_PORT" --log-level info --no-access-log
+    exec uvicorn gallery_dl_server:app --host 0.0.0.0 --port "$CONTAINER_PORT" --log-level info --no-access-log
   else
     exit 0
   fi
@@ -80,7 +80,7 @@ init_conf() {
     done
 
     if ! $any_file_exists; then
-      mv -n /usr/src/app/gallery-dl.conf "$dir" >/dev/null 2>&1
+      mv -n /usr/src/app/docs/gallery-dl.conf "$dir" >/dev/null 2>&1
     fi
   fi
 }

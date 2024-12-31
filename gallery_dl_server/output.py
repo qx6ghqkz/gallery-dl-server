@@ -10,24 +10,26 @@ LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
 
 
 def initialise_logging(file=None, stream=sys.stdout):
-    root = logging.getLogger()
+    logger = logging.getLogger("gallery-dl-server")
 
     formatter = logging.Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
 
     handler_console = logging.StreamHandler(stream)
     handler_console.setFormatter(formatter)
 
-    root.addHandler(handler_console)
+    logger.addHandler(handler_console)
 
     if file:
         handler_file = logging.FileHandler(file)
         handler_file.setFormatter(formatter)
 
-        root.addHandler(handler_file)
+        logger.addHandler(handler_file)
 
-    root.setLevel(LOG_LEVEL)
+    logger.setLevel(LOG_LEVEL)
 
-    return logging.getLogger("gallery-dl-server")
+    logger.propagate = False
+
+    return logger
 
 
 def get_logger(name):

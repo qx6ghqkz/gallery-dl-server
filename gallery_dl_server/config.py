@@ -2,9 +2,9 @@ import logging
 
 from collections.abc import MutableMapping
 
-from output import stdout_write
-
 from gallery_dl import config
+
+from .output import stdout_write
 
 
 _config = config._config

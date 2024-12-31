@@ -30,7 +30,7 @@ docker run -d \
 
 This is an example service definition that could be put in `docker-compose.yaml`. This service uses a VPN client container for its networking.
 
-[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN usage. See [docker-compose.yaml](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/docker-compose.yaml) for a template.
+[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN usage. See [docs/docker-compose.yaml](docs/docker-compose.yaml) for a template.
 
 ```yaml
 services:
@@ -62,7 +62,7 @@ services:
 If you have Python ^3.6.0 installed in your PATH you can simply run like so. The -u flag is necessary to catch the output immediately.
 
 ```shell
-python3 -u -m uvicorn gallery-dl-server:app --port 9080
+python3 -u -m uvicorn gallery_dl_server:app --port 9080
 ```
 
 ### Port Mapping
@@ -115,7 +115,7 @@ The configuration file must be mounted inside the Docker container in one of the
 - `/config/gallery-dl.conf`
 - `/config/config.json`
 
-A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if the file does not already exist in that location.
+A [default configuration file](docs/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if the file does not already exist in that location.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 

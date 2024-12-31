@@ -5,8 +5,6 @@ import re
 import shutil
 import time
 
-import output
-
 from contextlib import asynccontextmanager
 
 from starlette.applications import Starlette
@@ -20,8 +18,10 @@ from starlette.templating import Jinja2Templates
 from gallery_dl import version as gdl_version
 from yt_dlp import version as ydl_version
 
+from . import output
 
-log_file = os.path.join(os.path.dirname(__file__), "logs", "app.log")
+
+log_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "app.log")
 
 os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
@@ -92,14 +92,19 @@ async def log_route(request):
 async def lifespan(app):
     yield
     if os.path.isdir("/config"):
-        os.makedirs("/config/logs", exist_ok=True)
-        shutil.copy2(
-            log_file, "/config/logs/app_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".log"
-        )
+        if os.path.isfile(log_file) and os.path.getsize(log_file) > 0:
+            dst_dir = "/config/logs"
+
+            os.makedirs(dst_dir, exist_ok=True)
+
+            dst = os.path.join(
+                dst_dir, "app_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".log"
+            )
+            shutil.copy2(log_file, dst)
 
 
-def download(url, request_options):
-    cmd = [sys.executable, "download.py", url, str(request_options)]
+def download(url, options):
+    cmd = [sys.executable, "-m", "gallery_dl_server.download", url, str(options)]
 
     process = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True

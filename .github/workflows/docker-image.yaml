@@ -6,11 +6,11 @@ on:
       - 'main'
       - 'test'
     paths:
+      - 'docs/gallery-dl.conf'
+      - 'gallery_dl_server/**'
       - 'icons/**'
       - 'templates/**'
-      - '**.py'
       - 'Dockerfile'
-      - 'gallery-dl.conf'
       - 'requirements.txt'
       - 'start.sh'
     tags:

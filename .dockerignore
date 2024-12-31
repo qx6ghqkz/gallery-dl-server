@@ -1,14 +1,21 @@
 # Visual Studio
 .vscode/
 
-# Python
+# Cache
 __pycache__/
+.ruff_cache/
 
 # Scripts
 scripts/
 *.bat
 *.cmd
 *.ps1
+
+# Environments
+env/
+venv/
+.env
+.venv
 
 # Images
 images/
@@ -19,11 +26,10 @@ images/
 
 # pre-commit
 .pre-commit-config.*
-.ruff_cache/
 
 # Docker
+**/docker-compose.*
 .dockerignore
-docker-compose.*
 Dockerfile
 
 # Repo

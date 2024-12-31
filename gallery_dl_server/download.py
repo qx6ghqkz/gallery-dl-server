@@ -1,13 +1,12 @@
 import sys
 import ast
 
-import config
-import output
-
 from gallery_dl import job
 
+from . import config, output
 
-def run(url, request_options):
+
+def run(url, options):
     config.clear()
 
     config_files = [
@@ -20,10 +19,10 @@ def run(url, request_options):
     output.setup_logging()
 
     output.stdout_write(
-        f"Requesting download with the following overriding options: {request_options}"
+        f"Requesting download with the following overriding options: {options}"
     )
 
-    entries = config_update(request_options)
+    entries = config_update(options)
 
     if any(entries[0]):
         output.stdout_write(f"Added entries to the config dict: {entries[0]}")
@@ -36,11 +35,11 @@ def run(url, request_options):
     return status
 
 
-def config_update(request_options):
+def config_update(options):
     entries_added = []
     entries_removed = []
 
-    requested_format = request_options.get("video-options", "none-selected")
+    requested_format = options.get("video-options", "none-selected")
 
     if requested_format == "download-video":
         try:
