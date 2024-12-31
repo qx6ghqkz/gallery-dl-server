@@ -53,7 +53,7 @@ services:
 
 - Make sure you mount the directory containing the config file rather than the file itself. This ensures changes to the config file are propagated to the running Docker container and you will not need to restart the container. More information on this issue [here](https://github.com/moby/moby/issues/15793#issuecomment-135411504).
 
-- The output download directory depends on the `base-directory` in your gallery-dl config file. Make sure it is the absolute path `/gallery-dl/` instead of the relative path `./gallery-dl/` or you will need to mount to `/usr/src/app/gallery-dl` instead (not recommended).
+- The output download directory depends on the `base-directory` in your gallery-dl config file. Make sure it is the absolute path `/gallery-dl/` instead of the relative path `./gallery-dl/` or you will need to mount your download directory to `/usr/src/app/gallery-dl` instead (not recommended).
 
 - You can use the environment variables `UID` and `GID` to change the user ID and group ID of the user running the server process. This is important because downloaded files will be owned by that user. Make sure the IDs match those of the user on your host system. The default `UID:GID` is `1000:1000` when left unspecified.
 
@@ -65,10 +65,10 @@ If you have Python 3.9 or above installed and on your PATH, you can simply run t
 python3 -u -m uvicorn gallery_dl_server:app --host 0.0.0.0 --port 9080 --log-level info --no-access-log
 ```
 
-The program can also be run as a package, providing optional environment variable overrides inline. On Windows, this can be done using `set VAR="value" &&` in Command Prompt or `$env:VAR="value";` in PowerShell.
+The program can also be run as a package, and optional environment variable overrides can be provided inline. On Windows, this can be done using `set VAR=value &&` in Command Prompt or `$env:VAR=value;` in PowerShell.
 
 ```shell
-HOST="0.0.0.0" PORT="9080" LOG_LEVEL="info" ACCESS_LOG="False" python3 -u -m gallery_dl_server
+HOST=0.0.0.0 PORT=9080 LOG_LEVEL=info ACCESS_LOG=False python3 -u -m gallery_dl_server
 ```
 
 ### Port Mapping
@@ -114,7 +114,7 @@ services:
 
 Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl#configuration).
 
-The configuration file must be mounted inside the Docker container in one of the locations where gallery-dl will check for the config file.
+A configuration file is **required.** If running outside of Docker, the [default locations](https://github.com/mikf/gallery-dl#locations) will be used to search for a configuration file. When running *with* Docker, the configuration file must be mounted inside the Docker container in one of the locations where gallery-dl-server will search for the config file.
 
 ### Locations
 

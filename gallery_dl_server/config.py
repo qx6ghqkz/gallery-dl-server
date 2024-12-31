@@ -1,3 +1,4 @@
+import os
 import logging
 
 from collections.abc import MutableMapping
@@ -15,9 +16,31 @@ def clear():
     config.clear()
 
 
+def get_default_configs():
+    if os.name == "nt":
+        _default_configs = [
+            "%APPDATA%\\gallery-dl\\config.json",
+            "%USERPROFILE%\\gallery-dl\\config.json",
+            "%USERPROFILE%\\gallery-dl.conf",
+        ]
+    else:
+        _default_configs = [
+            "/etc/gallery-dl.conf",
+            "${XDG_CONFIG_HOME}/gallery-dl/config.json"
+            if os.environ.get("XDG_CONFIG_HOME")
+            else "${HOME}/.config/gallery-dl/config.json",
+            "${HOME}/.gallery-dl.conf",
+        ]
+
+    return _default_configs
+
+
 def load(_configs):
     exit_code = None
     loads = 0
+
+    if not os.path.isfile("/.dockerenv"):
+        _configs = get_default_configs()
 
     if config.log.level <= logging.ERROR:
         config.log.setLevel(logging.CRITICAL)
