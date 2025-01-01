@@ -23,7 +23,9 @@ def initialise_logging(file=None, stream=sys.stdout):
     logger.addHandler(handler_console)
 
     if file:
-        handler_file = logging.FileHandler(file)
+        handler_file = logging.FileHandler(
+            file, mode="a", encoding="utf-8", delay=False
+        )
         handler_file.setFormatter(formatter)
 
         logger.addHandler(handler_file)
@@ -65,7 +67,7 @@ def setup_logging():
     handler = output.setup_logging_handler("unsupportedfile", fmt="{message}")
 
     if handler:
-        ulog = job.Job.ulog = logging.getLogger("unsupportedfile")
+        ulog = job.Job.ulog = logging.getLogger("unsupportedfile")  # type: ignore
         ulog.addHandler(handler)
         ulog.propagate = False
 

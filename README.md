@@ -59,16 +59,18 @@ services:
 
 ### Python
 
-If you have Python 3.9 or above installed and on your PATH, you can simply run the server using the command line. The `-u` flag may be necessary for logs to be captured immediately. On Windows, replace `python3` with `py -3` or `python`.
+If you have Python 3.9 or above installed and on your PATH, you can simply run the server using the command line. Clone this repository and install the required dependencies located in `requirements.txt` in a virtual environment.
+
+Run the command below in the root folder while inside the virtual environment. On Windows, replace `python3` with `python`. The `-u` flag is to force the stdout and stderr streams to be unbuffered for real-time logging.
 
 ```shell
-python3 -u -m uvicorn gallery_dl_server:app --host 0.0.0.0 --port 9080 --log-level info --no-access-log
+python3 -u -m uvicorn gallery_dl_server:app --host "0.0.0.0" --port "9080" --log-level "info" --no-access-log
 ```
 
-The program can also be run as a package, and optional environment variable overrides can be provided inline. On Windows, this can be done using `set VAR=value &&` in Command Prompt or `$env:VAR=value;` in PowerShell.
+The program can also be run as a package, and optional environment variable overrides can be provided inline. On Windows, this can be done using `set "VAR=value" &&` in Command Prompt or `$env:VAR="value";` in PowerShell.
 
 ```shell
-HOST=0.0.0.0 PORT=9080 LOG_LEVEL=info ACCESS_LOG=False python3 -u -m gallery_dl_server
+HOST="0.0.0.0" PORT="9080" LOG_LEVEL="info" ACCESS_LOG="False" python3 -u -m gallery_dl_server
 ```
 
 ### Port Mapping

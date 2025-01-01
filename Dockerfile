@@ -30,8 +30,7 @@ ENV GID=1000
 
 RUN groupadd --gid $GID $GROUP \
   && useradd --home-dir $(pwd) --no-create-home --shell /bin/sh --gid $GID --uid $UID $USER \
-  && mkdir -p /.cache/pip /.local \
-  && chown -R $UID:$GID . /.cache/pip /.local \
+  && chown -R $UID:$GID . \
   && chmod +x ./start.sh
 
 CMD ["./start.sh"]

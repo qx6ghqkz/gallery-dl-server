@@ -91,7 +91,7 @@ async def log_route(request):
 @asynccontextmanager
 async def lifespan(app):
     yield
-    if os.path.isdir("/config"):
+    if os.path.isfile("/.dockerenv") and os.path.isdir("/config"):
         if os.path.isfile(log_file) and os.path.getsize(log_file) > 0:
             dst_dir = "/config/logs"
 
