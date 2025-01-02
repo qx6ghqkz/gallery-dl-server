@@ -1,3 +1,6 @@
+# Cache
+__pycache__/
+
 # Scripts
 scripts/
 *.bat
@@ -5,5 +8,12 @@ scripts/
 *.ps1
 
 # Environments
+env/
 venv/
 .env
+.venv
+
+# Misc
+drafts/
+gallery-dl/
+logs/
