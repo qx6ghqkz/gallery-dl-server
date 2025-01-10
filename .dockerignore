@@ -43,3 +43,8 @@ SECURITY.md
 drafts/
 gallery-dl/
 logs/
+
+# PyInstaller
+build/
+dist/
+*.spec

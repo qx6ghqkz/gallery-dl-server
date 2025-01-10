@@ -1,15 +1,16 @@
 import os
-import sys
-import subprocess
-import re
+import multiprocessing
+import queue
 import shutil
 import time
 
 from contextlib import asynccontextmanager
 
+import aiofiles
+
 from starlette.applications import Starlette
 from starlette.background import BackgroundTask
-from starlette.responses import RedirectResponse, JSONResponse, FileResponse
+from starlette.responses import RedirectResponse, JSONResponse, StreamingResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 from starlette.status import HTTP_303_SEE_OTHER
@@ -18,14 +19,13 @@ from starlette.templating import Jinja2Templates
 from gallery_dl import version as gdl_version
 from yt_dlp import version as ydl_version
 
-from . import output
+from . import output, download
+from .utils import resource_path
 
 
-log_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "app.log")
+log_file = output.LOG_FILE
 
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
-
-log = output.initialise_logging(log_file)
+log = output.initialise_logging(__name__)
 blank = output.get_blank_logger()
 
 blank_sent = False
@@ -36,7 +36,7 @@ async def redirect(request):
 
 
 async def dl_queue_list(request):
-    templates = Jinja2Templates(directory="templates")
+    templates = Jinja2Templates(directory=resource_path("templates"))
 
     return templates.TemplateResponse(
         "index.html",
@@ -70,7 +70,7 @@ async def q_put(request):
 
         return RedirectResponse(url="/gallery-dl", status_code=HTTP_303_SEE_OTHER)
 
-    task = BackgroundTask(download, url, options)
+    task = BackgroundTask(download_task, url, options)
 
     log.info("Added URL to the download queue: %s", url)
 
@@ -85,7 +85,15 @@ async def q_put(request):
 
 
 async def log_route(request):
-    return FileResponse(log_file)
+    async def file_iterator(file_path):
+        async with aiofiles.open(file_path, mode="r", encoding="utf-8") as file:
+            while True:
+                chunk = await file.read(64 * 1024)
+                if not chunk:
+                    break
+                yield chunk
+
+    return StreamingResponse(file_iterator(log_file), media_type="text/plain")
 
 
 @asynccontextmanager
@@ -103,62 +111,40 @@ async def lifespan(app):
             shutil.copy2(log_file, dst)
 
 
-def download(url, options):
-    cmd = [sys.executable, "-m", "gallery_dl_server.download", url, str(options)]
+def download_task(url, options):
+    """Initiate download as a subprocess and log output."""
+    log_queue = multiprocessing.Queue()
 
-    process = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    process = multiprocessing.Process(
+        target=download.run, args=(url, options, log_queue)
     )
+    process.start()
 
     while True:
-        if process.stdout:
-            line = process.stdout.readline()
+        if log_queue.empty() and not process.is_alive():
+            break
 
-            if line == "" and process.poll() is not None:
-                break
+        try:
+            record_dict = log_queue.get(timeout=1)
+            record = output.dict_to_record(record_dict)
 
-            if line:
-                formatted_line = remove_ansi_escape_sequences(line.rstrip())
+            if record.levelno >= log.getEffectiveLevel():
+                log.handle(record)
 
-                if formatted_line.startswith(output.PREFIX_ERROR):
-                    log.error(
-                        formatted_line.removeprefix(output.PREFIX_ERROR),
-                    )
-                elif formatted_line.startswith(output.PREFIX_WARNING):
-                    log.warning(
-                        formatted_line.removeprefix(output.PREFIX_WARNING),
-                    )
-                elif formatted_line.startswith("# "):
-                    log.warning(
-                        "File already exists and/or its ID is in a download archive: %s",
-                        formatted_line.removeprefix("# "),
-                    )
-                elif "[error]" in formatted_line.lower():
-                    log.error(formatted_line)
-                elif "[warning]" in formatted_line.lower():
-                    log.warning(formatted_line)
-                elif "[debug]" in formatted_line.lower():
-                    log.debug(formatted_line)
-                else:
-                    log.info(formatted_line)
+            if "Video should already be available" in record.getMessage():
+                log.warning("Terminating process as video is not available")
+                process.terminate()
+        except queue.Empty:
+            continue
 
-                if "Video should already be available" in formatted_line:
-                    process.kill()
-                    log.warning("Terminating process as video is not available")
+    process.join()
 
-    exit_code = process.wait()
+    exit_code = process.exitcode
 
     if exit_code == 0:
         log.info("Download job completed with exit code: 0")
     else:
         log.error("Download job failed with exit code: %s", exit_code)
-
-    return exit_code
-
-
-def remove_ansi_escape_sequences(text):
-    ansi_escape_pattern = re.compile(r"\x1B\[[0-?9;]*[mGKH]")
-    return ansi_escape_pattern.sub("", text)
 
 
 routes = [
@@ -166,7 +152,7 @@ routes = [
     Route("/gallery-dl", endpoint=dl_queue_list, methods=["GET"]),
     Route("/gallery-dl/q", endpoint=q_put, methods=["POST"]),
     Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
-    Mount("/icons", app=StaticFiles(directory="icons"), name="icons"),
+    Mount("/icons", app=StaticFiles(directory=resource_path("icons")), name="icons"),
 ]
 
 app = Starlette(debug=True, routes=routes, lifespan=lifespan)

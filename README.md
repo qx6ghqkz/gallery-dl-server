@@ -61,17 +61,31 @@ services:
 
 If you have Python 3.9 or above installed and on your PATH, you can simply run the server using the command line. Clone this repository and install the required dependencies located in `requirements.txt` in a virtual environment.
 
-Run the command below in the root folder while inside the virtual environment. On Windows, replace `python3` with `python`. The `-u` flag is to force the stdout and stderr streams to be unbuffered for real-time logging.
+Run the command below in the root folder while inside the virtual environment. On Windows, replace `python3` with `python`.
 
 ```shell
-python3 -u -m uvicorn gallery_dl_server:app --host "0.0.0.0" --port "9080" --log-level "info" --no-access-log
+python3 -m uvicorn gallery_dl_server:app --host "0.0.0.0" --port "9080" --log-level "info" --no-access-log
 ```
 
 The program can also be run as a package, and optional environment variable overrides can be provided inline. On Windows, this can be done using `set "VAR=value" &&` in Command Prompt or `$env:VAR="value";` in PowerShell.
 
 ```shell
-HOST="0.0.0.0" PORT="9080" LOG_LEVEL="info" ACCESS_LOG="False" python3 -u -m gallery_dl_server
+HOST="0.0.0.0" PORT="9080" LOG_LEVEL="info" ACCESS_LOG="False" python3 -m gallery_dl_server
 ```
+
+When running as a package, a random available port will be selected if `PORT` is not set as an environment variable.
+
+### Standalone Executable
+
+On Windows, the program can be run using the prebuilt executable (.exe) file, which includes a Python interpreter and the required Python packages. Prebuilt executables for each release can be found in [Releases](https://github.com/qx6ghqkz/gallery-dl-server/releases).
+
+By default, any available port will be selected. To select a specific port, run the executable from the command line with `PORT` set as an environment variable.
+
+```cmd
+set "HOST=0.0.0.0" && set "PORT=9080" && gallery-dl-server.exe
+```
+
+The executable utilises the same environment variable overrides as the Python package.
 
 ### Port Mapping
 
