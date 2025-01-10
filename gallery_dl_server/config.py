@@ -5,18 +5,22 @@ from collections.abc import MutableMapping
 
 from gallery_dl import config
 
-from .output import stdout_write, PREFIX_ERROR
+from . import output
 
+
+log = output.initialise_logging(__name__)
 
 _config = config._config
 _files = config._files
 
 
 def clear():
+    """Clear loaded configuration."""
     config.clear()
 
 
 def get_default_configs():
+    """Return default gallery-dl configuration file locations."""
     if os.name == "nt":
         _default_configs = [
             "%APPDATA%\\gallery-dl\\config.json",
@@ -36,6 +40,7 @@ def get_default_configs():
 
 
 def load(_configs):
+    """Load configuration files."""
     exit_code = None
     loads = 0
 
@@ -55,17 +60,16 @@ def load(_configs):
             loads += 1
 
     if loads > 0:
-        stdout_write(f"Loaded gallery-dl configuration file(s): {_files}")
+        log.info(f"Loaded gallery-dl configuration file(s): {_files}")
     elif exit_code:
-        stdout_write(
-            f"{PREFIX_ERROR}Unable to load configuration file: Exit code {exit_code}"
-        )
+        log.error(f"Unable to load configuration file: Exit code {exit_code}")
 
         if exit_code == 1:
-            stdout_write(f"Valid configuration file locations: {_configs}")
+            log.info(f"Valid configuration file locations: {_configs}")
 
 
 def add(dict=None, conf=_config, fixed=False, **kwargs):
+    """Add entries to a nested dictionary."""
     if dict:
         for k, v in dict.items():
             if isinstance(v, MutableMapping):
@@ -104,6 +108,7 @@ def add(dict=None, conf=_config, fixed=False, **kwargs):
 
 
 def remove(path, item=None, key=None, value=None):
+    """Remove entries from a nested dictionary."""
     entries = []
     removed = []
 
@@ -139,7 +144,7 @@ def remove(path, item=None, key=None, value=None):
             try:
                 _list.remove(entry)
             except Exception as e:
-                stdout_write(f"{PREFIX_ERROR}Exception: {e}")
+                log.error(f"Exception: {e}")
             else:
                 removed.append(entry)
 
@@ -160,7 +165,7 @@ def remove(path, item=None, key=None, value=None):
             try:
                 val = _dict.pop(entry)
             except Exception as e:
-                stdout_write(f"{PREFIX_ERROR}Exception: {e}")
+                log.error(f"Exception: {e}")
             else:
                 removed.append({entry: val})
 

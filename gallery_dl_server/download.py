@@ -1,12 +1,13 @@
-import sys
-import ast
-
 from gallery_dl import job, exception
 
 from . import config, output
 
 
-def run(url, options):
+log = output.initialise_logging(__name__)
+
+
+def run(url, options, log_queue):
+    """Set gallery-dl configuration, set up logging and run download job."""
     config.clear()
 
     config_files = [
@@ -18,31 +19,35 @@ def run(url, options):
 
     output.setup_logging()
 
-    output.stdout_write(
-        f"Requesting download with the following overriding options: {options}"
-    )
+    output.capture_logs(log_queue)
+
+    output.redirect_standard_streams()
+
+    log.info(f"Requested download with the following options: {options}")
 
     entries = config_update(options)
 
     if any(entries[0]):
-        output.stdout_write(f"Added entries to the config dict: {entries[0]}")
+        log.info(f"Added entries to the config dict: {entries[0]}")
 
     if any(entries[1]):
-        output.stdout_write(f"Removed entries from the config dict: {entries[1]}")
+        log.info(f"Removed entries from the config dict: {entries[1]}")
 
     status = 0
     try:
         status = job.DownloadJob(url).run()
     except exception.GalleryDLException as e:
         status = e.code
-        output.stdout_write(
-            f"{output.PREFIX_ERROR}Exception: {e.__module__}.{type(e).__name__}: {e}"
-        )
+        log.error(f"Exception: {e.__module__}.{type(e).__name__}: {e}")
+    except Exception as e:
+        status = -1
+        log.error(f"Exception: {e}")
 
     return status
 
 
 def config_update(options):
+    """Update loaded configuration with request options."""
     entries_added = []
     entries_removed = []
 
@@ -137,8 +142,3 @@ def config_update(options):
             )
 
     return (entries_added, entries_removed)
-
-
-if __name__ == "__main__":
-    status = run(sys.argv[1], ast.literal_eval(sys.argv[2]))
-    sys.exit(status)
