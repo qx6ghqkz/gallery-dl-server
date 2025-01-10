@@ -122,9 +122,9 @@ def remove(path, item=None, key=None, value=None):
                                 entries.append(entry)
                         else:
                             if "any" == value:
-                                entries.extend((entry, entry_next))
+                                entries.extend([entry, entry_next])
                             elif entry_next == value:
-                                entries.extend((entry, entry_next))
+                                entries.extend([entry, entry_next])
                     else:
                         entries.append(entry)
             elif key:
