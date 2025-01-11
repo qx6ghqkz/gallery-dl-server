@@ -54,11 +54,13 @@ class Formatter(logging.Formatter):
         record.levelname = record.levelname.lower()
 
         message = super().format(record)
-        return self.remove_ansi_escape_sequences(message)
+        return remove_ansi_escape_sequences(message)
 
-    def remove_ansi_escape_sequences(self, text):
-        ansi_escape_pattern = re.compile(r"\x1B\[[0-?9;]*[mGKH]")
-        return ansi_escape_pattern.sub("", text)
+
+def remove_ansi_escape_sequences(text):
+    """Remove ANSI escape sequences from the given text."""
+    ansi_escape_pattern = re.compile(r"\x1B\[[0-?9;]*[mGKH]")
+    return ansi_escape_pattern.sub("", text)
 
 
 def get_logger(name):
@@ -122,7 +124,8 @@ class QueueHandler(logging.Handler):
         self.queue = queue
 
     def emit(self, record):
-        record.msg = self.format(record)
+        record.msg = remove_ansi_escape_sequences(self.format(record))
+        record.args = ()
         record_dict = record_to_dict(record)
 
         self.queue.put(record_dict)
