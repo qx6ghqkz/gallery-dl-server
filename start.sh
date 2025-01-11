@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-check_env () {
-  if [[ ! -f "/.dockerenv" ]]; then
-    exit 0
-  fi
-}
-
 check_etc () {
   if [[ ! -f "/etc/passwd" ]]; then
     exit 1
@@ -104,7 +98,6 @@ exit() {
   command exit 0
 }
 
-check_env
 check_etc
 get_ids
 if [[ "$UID" -ne "$UID_OG" || "$GID" -ne "$GID_OG" ]]; then

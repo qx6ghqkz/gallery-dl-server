@@ -44,8 +44,10 @@ def load(_configs):
     exit_code = None
     loads = 0
 
-    if not os.path.isfile("/.dockerenv"):
+    if os.name == "nt":
         _configs = get_default_configs()
+    else:
+        _configs = _configs + get_default_configs()
 
     if config.log.level <= logging.ERROR:
         config.log.setLevel(logging.CRITICAL)
