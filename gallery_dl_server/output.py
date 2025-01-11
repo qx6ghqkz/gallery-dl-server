@@ -125,6 +125,7 @@ class QueueHandler(logging.Handler):
 
     def emit(self, record):
         record.msg = remove_ansi_escape_sequences(self.format(record))
+        record.args = ()
         record_dict = record_to_dict(record)
 
         self.queue.put(record_dict)
