@@ -134,7 +134,7 @@ def download_task(url, options):
 
             if "Video should already be available" in record.getMessage():
                 log.warning("Terminating process as video is not available")
-                process.terminate()
+                process.kill()
         except queue.Empty:
             continue
 
