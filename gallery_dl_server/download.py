@@ -6,7 +6,7 @@ from . import config, output
 log = output.initialise_logging(__name__)
 
 
-def run(url, options, log_queue):
+def run(url, options, log_queue, return_status):
     """Set gallery-dl configuration, set up logging and run download job."""
     config.clear()
 
@@ -43,7 +43,7 @@ def run(url, options, log_queue):
         status = -1
         log.error(f"Exception: {e}")
 
-    return status
+    return_status.put(status)
 
 
 def config_update(options):

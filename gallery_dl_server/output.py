@@ -201,7 +201,7 @@ class LoggerWriter:
             return
 
         if msg.startswith("# "):
-            msg = f"File already exists or its ID is in a download archive: {msg.removeprefix("# ")}"
+            msg = f"File already exists or its ID is in a download archive: {msg.removeprefix('# ')}"
             self.level = logging.WARNING
 
         self.logger.log(self.level, msg.strip())
@@ -213,7 +213,7 @@ class LoggerWriter:
 class NullWriter:
     """Suppress writes to stdout or stderr."""
 
-    def write(self, message):
+    def write(self, msg):
         pass
 
     def flush(self):

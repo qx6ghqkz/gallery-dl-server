@@ -114,9 +114,10 @@ async def lifespan(app):
 def download_task(url, options):
     """Initiate download as a subprocess and log output."""
     log_queue = multiprocessing.Queue()
+    return_status = multiprocessing.Queue()
 
     process = multiprocessing.Process(
-        target=download.run, args=(url, options, log_queue)
+        target=download.run, args=(url, options, log_queue, return_status)
     )
     process.start()
 
@@ -139,7 +140,10 @@ def download_task(url, options):
 
     process.join()
 
-    exit_code = process.exitcode
+    try:
+        exit_code = return_status.get(block=False)
+    except queue.Empty:
+        exit_code = process.exitcode
 
     if exit_code == 0:
         log.info("Download job completed with exit code: 0")
