@@ -108,7 +108,8 @@ async def log_route(request: Request):
 
 @asynccontextmanager
 async def lifespan(app: Starlette):
-    output.stdout_write(f"\033[32mINFO\033[0m:     Starting {type(app).__name__} application.")
+    uvicorn_log = output.get_logger("uvicorn")
+    uvicorn_log.info(f"Starting {type(app).__name__} application.")
     yield
     if utils.CONTAINER and os.path.isdir("/config"):
         if os.path.isfile(log_file) and os.path.getsize(log_file) > 0:
