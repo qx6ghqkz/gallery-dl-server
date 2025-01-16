@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+
+from multiprocessing import Queue
+from itertools import chain
+
 from gallery_dl import job, exception
 
 from . import config, output
@@ -6,7 +11,7 @@ from . import config, output
 log = output.initialise_logging(__name__)
 
 
-def run(url, options, log_queue, return_status):
+def run(url: str, options: dict[str, str], log_queue: Queue, return_status: Queue):
     """Set gallery-dl configuration, set up logging and run download job."""
     config.clear()
 
@@ -41,104 +46,72 @@ def run(url, options, log_queue, return_status):
         log.error(f"Exception: {e.__module__}.{type(e).__name__}: {e}")
     except Exception as e:
         status = -1
-        log.error(f"Exception: {e}")
+        log.error(f"Exception: {type(e).__name__}: {e}")
 
     return_status.put(status)
 
 
-def config_update(options):
+def config_update(options: dict[str, str]):
     """Update loaded configuration with request options."""
     entries_added = []
     entries_removed = []
 
     requested_format = options.get("video-options", "none-selected")
 
+    if requested_format == "none-selected":
+        return (entries_added, entries_removed)
+
+    cmdline_args = config.get(["extractor", "ytdl", "cmdline-args"])
+    raw_options = config.get(["extractor", "ytdl", "raw-options"])
+    postprocessors = config.get(["postprocessors"], conf=raw_options)
+
     if requested_format == "download-video":
-        try:
-            cmdline_args = (
-                config._config.get("extractor", {})
-                .get("ytdl", {})
-                .get("cmdline-args", [])
+        entries_removed.extend(
+            chain(
+                config.remove(cmdline_args, item="--extract-audio"),
+                config.remove(cmdline_args, item="-x"),
+                config.remove(raw_options, key="writethumbnail", value=False),
+                config.remove(postprocessors, key="key", value="FFmpegExtractAudio"),
             )
-        except AttributeError:
-            pass
-        else:
-            entries_removed.extend(
-                config.remove(cmdline_args, item="--extract-audio")
-                + config.remove(cmdline_args, item="-x")
-            )
-
-        try:
-            raw_options = (
-                config._config.get("extractor", {})
-                .get("ytdl", {})
-                .get("raw-options", {})
-            )
-        except AttributeError:
-            pass
-        else:
-            entries_removed.extend(
-                config.remove(raw_options, key="writethumbnail", value=False)
-            )
-
-        try:
-            postprocessors = (
-                config._config.get("extractor", {})
-                .get("ytdl", {})
-                .get("raw-options", {})
-                .get("postprocessors", [])
-            )
-        except AttributeError:
-            pass
-        else:
-            entries_removed.extend(
-                config.remove(postprocessors, key="key", value="FFmpegExtractAudio")
-            )
+        )
 
     if requested_format == "extract-audio":
         entries_added.extend(
-            config.add(
-                {
-                    "extractor": {
-                        "ytdl": {
-                            "cmdline-args": [
-                                "--extract-audio",
-                            ]
-                        }
-                    }
-                }
-            )[1]
-            + config.add(
-                {
-                    "extractor": {
-                        "ytdl": {
-                            "raw-options": {
-                                "writethumbnail": False,
-                                "postprocessors": [
-                                    {
-                                        "key": "FFmpegExtractAudio",
-                                        "preferredcodec": "best",
-                                        "preferredquality": 320,
-                                    }
-                                ],
+            chain(
+                config.add(
+                    {
+                        "extractor": {
+                            "ytdl": {
+                                "cmdline-args": [
+                                    "--extract-audio",
+                                ]
                             }
                         }
                     }
-                }
-            )[1]
+                )[1],
+                config.add(
+                    {
+                        "extractor": {
+                            "ytdl": {
+                                "raw-options": {
+                                    "writethumbnail": False,
+                                    "postprocessors": [
+                                        {
+                                            "key": "FFmpegExtractAudio",
+                                            "preferredcodec": "best",
+                                            "preferredquality": 320,
+                                        }
+                                    ],
+                                }
+                            }
+                        }
+                    }
+                )[1],
+            )
         )
 
-        try:
-            cmdline_args = (
-                config._config.get("extractor", {})
-                .get("ytdl", {})
-                .get("cmdline-args", [])
-            )
-        except AttributeError:
-            pass
-        else:
-            entries_removed.extend(
-                config.remove(cmdline_args, item="--merge-output-format", value="any")
-            )
+        entries_removed.extend(
+            config.remove(cmdline_args, item="--merge-output-format", value="any")
+        )
 
     return (entries_added, entries_removed)

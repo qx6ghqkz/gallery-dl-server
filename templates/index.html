@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Web frontend for gallery-dl with yt-dlp" />
@@ -74,12 +73,11 @@
         text-overflow: ellipsis;
       }
 
-      #btn-logs {
-        margin: 24px auto 12px auto;
+      select optgroup{
+        font-style: normal;
       }
 
       #box {
-        margin: 12px auto 12px auto;
         resize: vertical;
         overflow-y: auto;
         min-height: 95px;
@@ -108,9 +106,8 @@
       }
 
       footer > p {
-        margin: 8px auto 24px auto;
         font-size: 16px;
-        line-height: 24px;
+        line-height: 16px;
       }
     </style>
 
@@ -118,26 +115,33 @@
   </head>
 
   <body class="d-flex h-100 text-center text-white">
-    <div class="container d-flex w-100 p-3 flex-column">
+    <div class="container d-flex w-100 p-3 pb-0 flex-column">
       <header class="mb-auto"></header>
 
       <main class="px-3">
-        <h1 class="display-4">gallery-dl</h1>
+        <h1 class="mb-2 display-4">gallery-dl</h1>
 
-        <p class="lead">
-          Enter a URL to download the contents to the server. The URL can be
-          from any supported site listed by
+        <p class="mb-3 lead">
+          Enter a URL to download the contents to the server.
+          The URL can be from any supported site listed by
           <a
             class="text-info"
             href="https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md"
-          >gallery-dl</a> or
+            target="_blank"
+            rel="noopener noreferrer"
+            >gallery-dl</a
+          >
+          or
           <a
             class="text-info"
             href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md"
-          >yt-dlp</a>.
-        </p>
+            target="_blank"
+            rel="noopener noreferrer"
+            >yt-dlp</a
+          >.</p
+        >
 
-        <form action="/gallery-dl/q" method="POST">
+        <form class="mb-4" action="/gallery-dl/q" method="POST">
           <input type="hidden" name="ui" value="true" />
           <div class="input-group">
             <input
@@ -165,23 +169,45 @@
           </div>
         </form>
 
-        <div id="container-btn">
+        <div class="mb-4" id="container-btn">
           <button id="btn-logs" class="btn btn-outline-light" onclick="toggleLogs()">Show Logs</button>
         </div>
 
-        <div id="container-logs">
+        <div class="mb-4" id="container-logs">
           <textarea id="box" name="Logs" placeholder="Logs output" readonly style="display: none"></textarea>
         </div>
       </main>
 
       <footer class="mt-auto text-white-50">
-        <p>
+        <p class="mb-3">
+          <a
+            class="text-white"
+            href="https://github.com/qx6ghqkz/gallery-dl-server"
+            target="_blank"
+            rel="noopener noreferrer"
+            >gallery-dl-server</a
+          >
+          v{{ app_version }}</p
+        >
+        <p style="margin-bottom: 28px">
           Web frontend for
-          <a class="text-white" href="https://github.com/mikf/gallery-dl">gallery-dl</a>
-          v{{ gallerydl_version }} with
-          <a class="text-white" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
-          v{{ ytdlp_version }}.
-        </p>
+          <a
+            class="text-white"
+            href="https://github.com/mikf/gallery-dl"
+            target="_blank"
+            rel="noopener noreferrer"
+            >gallery-dl</a
+          >
+          v{{ gallery_dl_version }} with
+          <a
+            class="text-white"
+            href="https://github.com/yt-dlp/yt-dlp"
+            target="_blank"
+            rel="noopener noreferrer"
+            >yt-dlp</a
+          >
+          v{{ yt_dlp_version }}</p
+        >
       </footer>
     </div>
 

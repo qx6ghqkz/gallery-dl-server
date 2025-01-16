@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import multiprocessing
 import queue
@@ -6,21 +8,21 @@ import time
 
 from contextlib import asynccontextmanager
 
-import aiofiles
-
 from starlette.applications import Starlette
 from starlette.background import BackgroundTask
+from starlette.datastructures import UploadFile
 from starlette.responses import RedirectResponse, JSONResponse, StreamingResponse
+from starlette.requests import Request
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 from starlette.status import HTTP_303_SEE_OTHER
 from starlette.templating import Jinja2Templates
 
-from gallery_dl import version as gdl_version
-from yt_dlp import version as ydl_version
+import aiofiles
+import gallery_dl.version
+import yt_dlp.version
 
-from . import output, download
-from .utils import resource_path
+from . import download, output, utils, version
 
 
 log_file = output.LOG_FILE
@@ -31,24 +33,23 @@ blank = output.get_blank_logger()
 blank_sent = False
 
 
-async def redirect(request):
+async def redirect(request: Request):
     return RedirectResponse(url="/gallery-dl")
 
 
-async def dl_queue_list(request):
-    templates = Jinja2Templates(directory=resource_path("templates"))
-
+async def dl_queue_list(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
-            "gallerydl_version": gdl_version.__version__,
-            "ytdlp_version": ydl_version.__version__,
+            "app_version": version.__version__,
+            "gallery_dl_version": gallery_dl.version.__version__,
+            "yt_dlp_version": yt_dlp.version.__version__,
         },
     )
 
 
-async def q_put(request):
+async def q_put(request: Request):
     global blank_sent
 
     if not blank_sent:
@@ -56,9 +57,20 @@ async def q_put(request):
         blank_sent = True
 
     form = await request.form()
-    url = form.get("url").strip()
+
+    url = form.get("url")
     ui = form.get("ui")
-    options = {"video-options": form.get("video-opts")}
+    video_opts = form.get("video-opts")
+
+    data = [url, ui, video_opts]
+    data = [None if isinstance(value, UploadFile) else value for value in data]
+
+    url, ui, video_opts = data
+
+    if not video_opts:
+        video_opts = "none-selected"
+
+    options = {"video-options": video_opts}
 
     if not url:
         log.error("No URL provided.")
@@ -70,22 +82,20 @@ async def q_put(request):
 
         return RedirectResponse(url="/gallery-dl", status_code=HTTP_303_SEE_OTHER)
 
-    task = BackgroundTask(download_task, url, options)
+    task = BackgroundTask(download_task, url.strip(), options)
 
     log.info("Added URL to the download queue: %s", url)
 
     if not ui:
-        return JSONResponse(
-            {"success": True, "url": url, "options": options}, background=task
-        )
+        return JSONResponse({"success": True, "url": url, "options": options}, background=task)
 
     return RedirectResponse(
         url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
     )
 
 
-async def log_route(request):
-    async def file_iterator(file_path):
+async def log_route(request: Request):
+    async def file_iterator(file_path: str):
         async with aiofiles.open(file_path, mode="r", encoding="utf-8") as file:
             while True:
                 chunk = await file.read(64 * 1024)
@@ -97,21 +107,20 @@ async def log_route(request):
 
 
 @asynccontextmanager
-async def lifespan(app):
+async def lifespan(app: Starlette):
+    output.stdout_write(f"\033[32mINFO\033[0m:     Starting {type(app).__name__} application.")
     yield
-    if os.path.isdir("/config"):
+    if utils.CONTAINER and os.path.isdir("/config"):
         if os.path.isfile(log_file) and os.path.getsize(log_file) > 0:
             dst_dir = "/config/logs"
 
             os.makedirs(dst_dir, exist_ok=True)
 
-            dst = os.path.join(
-                dst_dir, "app_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".log"
-            )
+            dst = os.path.join(dst_dir, "app_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".log")
             shutil.copy2(log_file, dst)
 
 
-def download_task(url, options):
+def download_task(url: str, options: dict[str, str]):
     """Initiate download as a subprocess and log output."""
     log_queue = multiprocessing.Queue()
     return_status = multiprocessing.Queue()
@@ -151,12 +160,14 @@ def download_task(url, options):
         log.error("Download job failed with exit code: %s", exit_code)
 
 
+templates = Jinja2Templates(directory=utils.resource_path("templates"))
+
 routes = [
     Route("/", endpoint=redirect, methods=["GET"]),
     Route("/gallery-dl", endpoint=dl_queue_list, methods=["GET"]),
     Route("/gallery-dl/q", endpoint=q_put, methods=["POST"]),
     Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
-    Mount("/icons", app=StaticFiles(directory=resource_path("icons")), name="icons"),
+    Mount("/icons", app=StaticFiles(directory=utils.resource_path("icons")), name="icons"),
 ]
 
 app = Starlette(debug=True, routes=routes, lifespan=lifespan)
