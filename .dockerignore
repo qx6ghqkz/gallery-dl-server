@@ -48,3 +48,7 @@ logs/
 build/
 dist/
 *.spec
+
+# Config
+docs/config.*
+pyproject.toml

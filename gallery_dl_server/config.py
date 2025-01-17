@@ -1,27 +1,33 @@
+# -*- coding: utf-8 -*-
+
 import os
+import sys
 import logging
 
-from collections.abc import MutableMapping
+from typing import Any
+
+import tomllib as toml
+import yaml
 
 from gallery_dl import config
 
-from . import output
+from . import output, utils
 
 
 log = output.initialise_logging(__name__)
 
-_config = config._config
-_files = config._files
+_config: dict[str, Any] = config._config
+_files: list[str] = config._files
 
 
-def clear():
+def clear(conf: dict[str, Any] = _config):
     """Clear loaded configuration."""
-    config.clear()
+    conf.clear()
 
 
 def get_default_configs():
     """Return default gallery-dl configuration file locations."""
-    if os.name == "nt":
+    if utils.WINDOWS:
         _default_configs = [
             "%APPDATA%\\gallery-dl\\config.json",
             "%USERPROFILE%\\gallery-dl\\config.json",
@@ -36,139 +42,184 @@ def get_default_configs():
             "${HOME}/.gallery-dl.conf",
         ]
 
+    if utils.EXECUTABLE:
+        _default_configs.extend(
+            utils.join_paths(
+                os.path.dirname(sys.executable),
+                "gallery-dl.conf",
+                "config.json",
+            )
+        )
+
     return _default_configs
 
 
-def load(_configs):
+def get_new_configs(_configs: list[str], exts: list[str]) -> list[str]:
+    """Return list of original paths and paths with new extensions."""
+    _new_configs = []
+
+    for path in _configs:
+        _new_configs.append(path)
+
+        for ext in exts:
+            base_path = path.rsplit(".", 1)[0]
+            _new_configs.append(base_path + ext)
+
+    return _new_configs
+
+
+def load(_configs: list[str]):
     """Load configuration files."""
-    exit_code = None
-    loads = 0
+    exit_codes = []
+    messages = []
+    loaded = 0
 
-    if os.name == "nt":
-        _configs = get_default_configs()
+    new_exts = [".yaml", ".yml", ".toml"]
+
+    if utils.CONTAINER:
+        _configs = get_new_configs(_configs, new_exts)
     else:
-        _configs = _configs + get_default_configs()
+        _configs = get_new_configs(get_default_configs(), new_exts)
 
-    if config.log.level <= logging.ERROR:
-        config.log.setLevel(logging.CRITICAL)
+    log_buffer = output.StringLogger()
 
     for path in _configs:
         try:
-            config.load([path], strict=True)
+            if path.endswith((".conf", ".json")):
+                config.load([path], strict=True)
+            if path.endswith((".yaml", ".yml")):
+                config.load([path], strict=True, loads=yaml.safe_load)
+            if path.endswith(".toml"):
+                config.load([path], strict=True, loads=toml.loads)
         except SystemExit as e:
-            if not exit_code:
-                exit_code = e.code
+            exit_codes.append(e.code)
+            if e.code == 2:
+                messages.append(log_buffer.get_logs().split(output.LOG_SEPARATOR)[-1])
         else:
-            loads += 1
+            loaded += 1
 
-    if loads > 0:
-        log.info(f"Loaded gallery-dl configuration file(s): {_files}")
-    elif exit_code:
-        log.error(f"Unable to load configuration file: Exit code {exit_code}")
+    log_buffer.close()
 
-        if exit_code == 1:
-            log.info(f"Valid configuration file locations: {_configs}")
+    if loaded > 0:
+        log.info(f"Loaded gallery-dl configuration file(s): [{output.join(_files)}]")
+    else:
+        if 2 not in exit_codes:
+            log.error("Loading configuration files failed with exit code: 1")
+            log.info(f"Valid configuration file locations: [{output.join(_configs)}]")
+        else:
+            log.error("Loading configuration files failed with exit code: 2")
+
+    for message in messages:
+        log.log_multiline(logging.ERROR, message)
+
+    if loaded == 0:
+        raise SystemExit(1)
 
 
-def add(dict=None, conf=_config, fixed=False, **kwargs):
-    """Add entries to a nested dictionary."""
-    if dict:
-        for k, v in dict.items():
-            if isinstance(v, MutableMapping):
-                if k in conf.keys() or not fixed:
+def get(path: list[str], default: Any = None, conf: dict[str, Any] = _config):
+    """Get a value from a nested dictionary or return a default value."""
+    if isinstance(path, (list, tuple)):
+        try:
+            for p in path:
+                conf = conf[p]
+            return conf
+        except Exception:
+            return default
+
+
+def add(
+    _dict: dict[str, Any] | None = None, conf: dict[str, Any] = _config, fixed=False, **kwargs: Any
+):
+    """Add entries to a nested dictionary or list."""
+    if _dict:
+        for k, v in _dict.items():
+            if k in conf.keys() or not fixed:
+                if isinstance(v, dict):
                     conf[k] = add(v, conf.get(k) or {}, fixed=fixed)[0]
-            elif isinstance(v, list):
-                if k in conf.keys() or not fixed:
+                elif isinstance(v, list):
                     for i in v:
-                        if not isinstance(i, MutableMapping):
+                        if not isinstance(i, dict):
                             if i not in conf.get(k, []) or not str(i).startswith("-"):
                                 conf[k] = conf.get(k, []) + [i]
                         else:
                             if i not in conf.get(k, []):
                                 conf[k] = conf.get(k, []) + [i]
-            else:
-                if k in conf.keys() or not fixed:
+                else:
                     conf[k] = v
 
-        while isinstance(d := list(dict.values())[0], MutableMapping):
-            dict = d
+        while isinstance(d := list(_dict.values())[0], dict):
+            _dict = d
 
     if kwargs:
         for key, val in kwargs.items():
             for k, v in conf.items():
-                if isinstance(v, MutableMapping):
+                if k == key and key in conf.keys():
+                    conf[k] = val
+                elif isinstance(v, dict):
                     conf[k] = add(conf=v, fixed=fixed, **{key: val})[0]
-                else:
-                    if k == key and key in conf.keys():
-                        conf[k] = val
-        if dict:
-            return (conf, [dict, kwargs])
-        else:
-            return (conf, [kwargs])
 
-    return (conf, [dict])
+    return (conf, [_dict] if not kwargs else [kwargs] if not _dict else [_dict, kwargs])
 
 
-def remove(path, item=None, key=None, value=None):
-    """Remove entries from a nested dictionary."""
-    entries = []
-    removed = []
+def remove(
+    path: dict[str, Any] | list, item: str | None = None, key: str | None = None, value: Any = None
+):
+    """Remove entries from a nested dictionary or list."""
+    entries_removed = []
 
-    if isinstance(path, list):
-        _list = path
+    if isinstance(path, dict) and key:
+        entries_removed.extend(remove_from_dict(path, key, value))
+    elif isinstance(path, list) and (item or key):
+        entries_removed.extend(remove_from_list(path, item, key, value))
 
-        for entry in _list:
-            if item:
-                if entry == item:
-                    if value:
-                        try:
-                            entry_index = _list.index(entry)
-                            entry_next = _list[entry_index + 1]
-                        except IndexError:
-                            if "any" == value:
-                                entries.append(entry)
-                        else:
-                            if "any" == value:
-                                entries.extend([entry, entry_next])
-                            elif entry_next == value:
-                                entries.extend([entry, entry_next])
-                    else:
-                        entries.append(entry)
-            elif key:
-                if value:
-                    if entry.get(key) == value:
-                        entries.append(entry)
-                else:
-                    if entry.get(key):
-                        entries.append(entry)
+    return entries_removed
 
-        for entry in entries:
+
+def remove_from_dict(_dict: dict[str, Any], key: str, value: Any):
+    """Remove keys from a nested dictionary."""
+    keys_to_remove = []
+
+    for k, v in _dict.items():
+        if k == key and (value is None or v == value):
+            keys_to_remove.append(k)
+
+    keys_removed = []
+    for k in keys_to_remove:
+        try:
+            v = _dict.pop(k)
+            keys_removed.append({k: v})
+        except Exception as e:
+            log.error(f"Exception: {type(e).__name__}", exc_info=True)
+
+    return keys_removed
+
+
+def remove_from_list(_list: list, item: str | None, key: str | None, value: Any):
+    """Remove elements from a nested list."""
+    elements_to_remove = []
+
+    for element in _list:
+        if isinstance(element, dict):
+            if key and (element.get(key) == value or not value and element.get(key)):
+                elements_to_remove.append(element)
+        elif item and element == item:
             try:
-                _list.remove(entry)
-            except Exception as e:
-                log.error(f"Exception: {e}")
-            else:
-                removed.append(entry)
+                element_index = _list.index(element)
+                element_next = _list[element_index + 1] if element_index + 1 < len(_list) else None
+                if value == "any" or (element_next == value):
+                    elements_to_remove.append(element)
+                    if element_next:
+                        elements_to_remove.append(element_next)
+            except IndexError:
+                if value == "any":
+                    elements_to_remove.append(element)
 
-    if isinstance(path, dict):
-        _dict = path
+    elements_removed = []
+    for element in elements_to_remove:
+        try:
+            _list.remove(element)
+            elements_removed.append(element)
+        except Exception as e:
+            log.error(f"Exception: {type(e).__name__}", exc_info=True)
 
-        if key:
-            if value:
-                for k, v in _dict.items():
-                    if k == key and v == value:
-                        entries.append(k)
-            else:
-                for k in _dict.keys():
-                    if k == key:
-                        entries.append(k)
-
-        for entry in entries:
-            try:
-                val = _dict.pop(entry)
-            except Exception as e:
-                log.error(f"Exception: {e}")
-            else:
-                removed.append({entry: val})
-
-    return removed
+    return elements_removed

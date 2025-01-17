@@ -1,0 +1,798 @@
+# gallery-dl-server default configuration file 2.0.1
+
+# full documentation at
+# https://gdl-org.github.io/docs/configuration.html
+
+# ===============================================================
+# ====    General Extractor Options    ==========================
+# (these can be set as site-specific extractor options as well)
+
+[extractor]
+base-directory = "/gallery-dl/"
+skip = true
+user-agent = "auto"
+referer = true
+headers = { }
+tls12 = true
+proxy-env = true
+retries = 4
+retry-codes = [ ]
+timeout = 30
+verify = true
+download = true
+fallback = true
+archive-pragma = [ ]
+archive-event = [ "file" ]
+archive-mode = "file"
+cookies-update = true
+image-unique = false
+chapter-unique = false
+keywords = { }
+keywords-eval = false
+parent-directory = false
+parent-metadata = false
+parent-skip = false
+path-restrict = "auto"
+path-replace = "_"
+path-remove = "\\u0000-\\u001f\\u007f"
+path-strip = "auto"
+path-extended = true
+sleep = 0
+sleep-request = 0
+sleep-extractor = 0
+sleep-429 = 60
+actions = [ ]
+netrc = false
+
+[extractor.extension-map]
+jpeg = "jpg"
+jpe = "jpg"
+jfif = "jpg"
+jif = "jpg"
+jfi = "jpg"
+
+[[extractor.postprocessors]]
+name = "metadata"
+mode = "tags"
+whitelist = [ "danbooru", "gelbooru" ]
+
+# ===============================================================
+# ====    Site-specific Extractor Options    ====================
+
+[extractor.ao3]
+username = ""
+password = ""
+sleep-request = "0.5-1.5"
+formats = [ "pdf" ]
+
+[extractor.artstation]
+external = false
+previews = false
+videos = true
+
+[extractor.artstation.search]
+pro-first = true
+
+[extractor.aryion]
+username = ""
+password = ""
+recursive = true
+
+[extractor.bbc]
+width = 1_920
+
+[extractor.behance]
+sleep-request = "2.0-4.0"
+modules = [ "image", "video", "mediacollection", "embed" ]
+
+[extractor.bilibili]
+sleep-request = "2.0-4.0"
+
+[extractor.bluesky]
+username = ""
+password = ""
+include = [ "media" ]
+metadata = false
+quoted = false
+reposts = false
+videos = true
+
+[extractor.bluesky.post]
+depth = 0
+
+[extractor.boosty]
+allowed = true
+bought = false
+metadata = false
+videos = true
+
+[extractor.bunkr]
+tlds = false
+
+[extractor.cien]
+sleep-request = "1.0-2.0"
+files = [ "image", "video", "download", "gallery" ]
+
+[extractor.civitai]
+sleep-request = "0.5-1.5"
+api = "trpc"
+files = [ "image" ]
+include = [ "user-models", "user-posts" ]
+metadata = false
+nsfw = true
+quality = "original=true"
+
+[extractor.cohost]
+asks = true
+avatar = false
+background = false
+pinned = false
+replies = true
+shares = true
+
+[extractor.coomerparty]
+username = ""
+password = ""
+announcements = false
+comments = false
+dms = false
+duplicates = false
+favorites = "artist"
+files = [ "attachments", "file", "inline" ]
+metadata = false
+revisions = false
+order-revisions = "desc"
+
+[extractor.cyberdrop]
+
+[extractor.deviantart]
+auto-watch = false
+auto-unwatch = false
+comments = false
+comments-avatars = false
+extra = false
+flat = true
+folders = false
+group = true
+include = "gallery"
+intermediary = true
+journals = "html"
+jwt = false
+mature = true
+metadata = false
+original = true
+pagination = "api"
+previews = false
+public = true
+quality = 100
+wait-min = 0
+
+[extractor.deviantart.avatar]
+
+[extractor.exhentai]
+username = ""
+password = ""
+sleep-request = "3.0-6.0"
+domain = "auto"
+gp = "resized"
+metadata = false
+original = true
+tags = false
+fallback-retries = 2
+directory = [ "{category}", "{title}" ]
+filename = "{num:>03}.{extension}"
+postprocessors = [ "cbz" ]
+
+[extractor.fanbox]
+comments = false
+embeds = true
+metadata = false
+
+[extractor.flickr]
+sleep-request = "1.0-2.0"
+contexts = false
+exif = false
+metadata = false
+videos = true
+
+[extractor.furaffinity]
+descriptions = "text"
+external = false
+include = [ "gallery" ]
+layout = "auto"
+
+[extractor.gelbooru]
+
+[extractor.gelbooru.favorite]
+order-posts = "desc"
+
+[extractor.generic]
+enabled = false
+
+[extractor.gofile]
+recursive = false
+
+[extractor.hentaifoundry]
+include = [ "pictures" ]
+
+[extractor.hitomi]
+format = "webp"
+
+[extractor.idolcomplex]
+username = ""
+password = ""
+referer = false
+sleep-request = "3.0-6.0"
+
+[extractor.imagechest]
+
+[extractor.imagefap]
+sleep-request = "2.0-4.0"
+
+[extractor.imgbb]
+username = ""
+password = ""
+
+[extractor.imgur]
+mp4 = true
+
+[extractor.inkbunny]
+username = ""
+password = ""
+orderby = "create_datetime"
+
+[extractor.instagram]
+sleep-request = "6.0-12.0"
+api = "rest"
+cursor = true
+include = "posts"
+metadata = false
+order-files = "asc"
+order-posts = "asc"
+previews = false
+videos = true
+
+[extractor.itaku]
+sleep-request = "0.5-1.5"
+videos = true
+
+[extractor.kemonoparty]
+username = ""
+password = ""
+announcements = false
+comments = false
+dms = false
+duplicates = false
+favorites = "artist"
+files = [ "attachments", "file", "inline" ]
+metadata = false
+revisions = false
+order-revisions = "desc"
+
+[extractor.khinsider]
+format = "mp3"
+
+[extractor.koharu]
+username = ""
+password = ""
+sleep-request = "0.5-1.5"
+cbz = true
+format = [ "0", "1600", "1280", "980", "780" ]
+tags = false
+
+[extractor.luscious]
+gif = false
+
+[extractor.mangadex]
+username = ""
+password = ""
+api-server = "https://api.mangadex.org"
+ratings = [ "safe", "suggestive", "erotica", "pornographic" ]
+postprocessors = [ "cbz" ]
+
+[extractor.mangoxo]
+username = ""
+password = ""
+
+[extractor.newgrounds]
+username = ""
+password = ""
+sleep-request = "0.5-1.5"
+flash = true
+format = "original"
+include = [ "art" ]
+
+[extractor.nhentai]
+directory = [ "{category}", "{title}" ]
+filename = "{num:>03}.{extension}"
+postprocessors = [ "cbz" ]
+
+[extractor.nsfwalbum]
+referer = false
+
+[extractor.oauth]
+browser = true
+cache = true
+host = "localhost"
+port = 6_414
+
+[extractor.paheal]
+metadata = false
+
+[extractor.patreon]
+files = [
+  "images",
+  "image_large",
+  "attachments",
+  "postfile",
+  "content"
+]
+
+[extractor.pillowfort]
+username = ""
+password = ""
+external = false
+inline = true
+reblogs = false
+
+[extractor.pinterest]
+domain = "auto"
+sections = true
+stories = true
+videos = true
+
+[extractor.pixeldrain]
+
+[extractor.pixiv]
+captions = false
+comments = false
+include = [ "artworks" ]
+metadata = false
+metadata-bookmark = false
+sanity = true
+tags = "japanese"
+ugoira = true
+postprocessors = [ "ugoira-copy" ]
+covers = false
+embeds = false
+full-series = false
+
+[extractor.pixiv.directory]
+"page_count > 1" = [ "{category}", "{user[id]} {user[account]}", "{id} {title}" ]
+"" = [ "{category}", "{user[id]} {user[account]}" ]
+
+[extractor.pixiv.filename]
+"page_count > 1" = "{num:>03}.{extension}"
+"" = "{id} {title}.{extension}"
+
+[extractor.plurk]
+sleep-request = "0.5-1.5"
+comments = false
+
+[extractor.poipiku]
+sleep-request = "0.5-1.5"
+
+[extractor.pornpics]
+sleep-request = "0.5-1.5"
+
+[extractor.readcomiconline]
+sleep-request = "3.0-6.0"
+captcha = "stop"
+quality = "auto"
+
+[extractor.reddit]
+comments = 0
+morecomments = false
+embeds = true
+date-min = 0
+date-max = 253_402_210_800
+date-format = "%Y-%m-%dT%H:%M:%S"
+previews = true
+recursion = 0
+videos = true
+whitelist = [ "imgur", "redgifs" ]
+parent-directory = true
+parent-metadata = "_reddit"
+
+[extractor."reddit>imgur"]
+directory = [ ]
+filename = "{_reddit[id]} {_reddit[title]} {id}.{extension}"
+
+[extractor."reddit>redgifs"]
+directory = [ ]
+filename = "{_reddit[id]} {_reddit[title]} {id}.{extension}"
+
+[extractor.redgifs]
+format = [ "hd", "sd", "gif" ]
+
+[extractor.rule34xyz]
+format = [ "10", "40", "41", "2" ]
+
+[extractor.sankaku]
+username = ""
+password = ""
+id-format = "numeric"
+refresh = false
+tags = false
+
+[extractor.sankakucomplex]
+embeds = false
+videos = true
+
+[extractor.scrolller]
+username = ""
+password = ""
+sleep-request = "0.5-1.5"
+
+[extractor.skeb]
+article = false
+sent-requests = false
+thumbnails = false
+
+[extractor.skeb.search]
+
+[extractor.smugmug]
+videos = true
+
+[extractor.soundgasm]
+sleep-request = "0.5-1.5"
+directory = [ "{category}", "{user}" ]
+
+[extractor.steamgriddb]
+animated = true
+epilepsy = true
+humor = true
+dimensions = "all"
+file-types = "all"
+languages = "all,"
+nsfw = true
+sort = "score_desc"
+static = true
+styles = "all"
+untagged = true
+download-fake-png = true
+
+[extractor.seiga]
+username = ""
+password = ""
+
+[extractor.subscribestar]
+username = ""
+password = ""
+
+[extractor.tapas]
+username = ""
+password = ""
+
+[extractor.tsumino]
+username = ""
+password = ""
+
+[extractor.tumblr]
+avatar = false
+date-min = 0
+external = false
+inline = true
+offset = 0
+original = true
+pagination = "offset"
+posts = "all"
+ratelimit = "abort"
+reblogs = true
+fallback-delay = 120
+fallback-retries = 2
+
+[extractor.tumblrgallery]
+referer = false
+
+[extractor.twitter]
+username = ""
+username-alt = ""
+password = ""
+ads = false
+cards = false
+cards-blacklist = [ ]
+csrf = "cookies"
+cursor = true
+expand = false
+include = [ "timeline" ]
+locked = "abort"
+logout = true
+pinned = false
+quoted = false
+ratelimit = "wait"
+relogin = true
+replies = true
+retweets = false
+size = [ "orig", "4096x4096", "large", "medium", "small" ]
+text-tweets = false
+tweet-endpoint = "auto"
+transform = true
+twitpic = false
+unavailable = false
+unique = true
+users = "user"
+videos = true
+
+[extractor.twitter.timeline]
+strategy = "auto"
+
+[extractor.twitter.tweet]
+conversations = false
+
+[extractor.twitter.directory]
+"quote_id   != 0" = [ "{category!c}", "{quote_by}", "quote-retweets" ]
+"retweet_id != 0" = [ "{category!c}", "{user[name]}", "retweets" ]
+"" = [ "{category!c}", "{user[name]}" ]
+
+[[extractor.twitter.postprocessors]]
+name = "metadata"
+event = "post"
+filename = "twitter_{author[name]}_{tweet_id}_main.json"
+
+[extractor.unsplash]
+format = "raw"
+
+[extractor.urlgalleries]
+sleep-request = "0.5-1.5"
+
+[extractor.vipergirls]
+username = ""
+password = ""
+sleep-request = "0.5"
+domain = "vipergirls.to"
+like = false
+
+[extractor.vk]
+sleep-request = "0.5-1.5"
+offset = 0
+
+[extractor.vsco]
+include = [ "gallery" ]
+videos = true
+
+[extractor.wallhaven]
+include = [ "uploads" ]
+metadata = false
+
+[extractor.weasyl]
+metadata = false
+
+[extractor.weibo]
+sleep-request = "1.0-2.0"
+gifs = true
+include = [ "feed" ]
+livephoto = true
+retweets = false
+videos = true
+
+[extractor.ytdl]
+cmdline-args = [
+  "--ignore-errors",
+  "--no-cache-dir",
+  "--no-playlist",
+  "--merge-output-format",
+  "mp4",
+  "--convert-thumbnails",
+  "jpg",
+  "--embed-thumbnail",
+  "--sub-langs",
+  "all",
+  "--sub-format",
+  "srt/best",
+  "--convert-subs",
+  "srt",
+  "--embed-subs",
+  "--embed-metadata"
+]
+enabled = true
+format = "bestvideo*+bestaudio/best"
+generic = true
+logging = true
+module = "yt_dlp"
+directory = [ "{subcategory!l}" ]
+filename = "{title} [{id}].{extension}"
+
+[extractor.zerochan]
+username = ""
+password = ""
+sleep-request = "0.5-1.5"
+metadata = false
+pagination = "api"
+redirects = false
+
+# ===============================================================
+# ====    Base-Extractor and Instance Options    ================
+
+[extractor.blogger]
+videos = true
+
+[extractor.Danbooru]
+sleep-request = "0.5-1.5"
+external = false
+metadata = false
+threshold = "auto"
+ugoira = false
+
+[extractor.danbooru]
+username = ""
+password = ""
+
+[extractor.atfbooru]
+username = ""
+password = ""
+
+[extractor.aibooru]
+username = ""
+password = ""
+
+[extractor.booruvar]
+username = ""
+password = ""
+
+[extractor.E621]
+sleep-request = "0.5-1.5"
+metadata = false
+threshold = "auto"
+
+[extractor.e621]
+username = ""
+password = ""
+
+[extractor.e926]
+username = ""
+password = ""
+
+[extractor.e6ai]
+username = ""
+password = ""
+
+[extractor.foolfuuka]
+sleep-request = "0.5-1.5"
+
+[extractor.archivedmoe]
+referer = false
+
+[extractor.mastodon]
+cards = false
+reblogs = false
+replies = true
+text-posts = false
+
+[extractor.misskey]
+renotes = false
+replies = true
+
+[extractor.Nijie]
+sleep-request = "2.0-4.0"
+include = [ "illustration", "doujin" ]
+
+[extractor.nijie]
+username = ""
+password = ""
+
+[extractor.horne]
+username = ""
+password = ""
+
+[extractor.nitter]
+quoted = false
+retweets = false
+videos = true
+
+[extractor.philomena]
+sleep-request = "0.5-1.5"
+svg = true
+filter = 2
+
+[extractor.derpibooru]
+filter = 56_027
+
+[extractor.ponybooru]
+filter = 3
+
+[extractor.twibooru]
+sleep-request = "6.0-6.1"
+
+[extractor.postmill]
+save-link-post-body = false
+
+[extractor.reactor]
+sleep-request = "3.0-6.0"
+gif = false
+
+[extractor.wikimedia]
+sleep-request = "1.0-2.0"
+limit = 50
+
+[extractor.booru]
+tags = false
+notes = false
+url = "file_url"
+
+# ===================================================================
+# ====    Downloader Options    =====================================
+
+[downloader]
+mtime = true
+part = true
+progress = 3
+retries = 4
+timeout = 30
+verify = true
+
+[downloader.http]
+adjust-extensions = true
+chunk-size = 32_768
+consume-content = false
+enabled = true
+retry-codes = [ 404, 429, 430 ]
+validate = true
+
+[downloader.ytdl]
+enabled = true
+forward-cookies = true
+logging = true
+module = "yt_dlp"
+
+# ===================================================================
+# ====    Output Options    =========================================
+
+[output]
+ansi = true
+fallback = true
+mode = "auto"
+private = false
+progress = true
+shorten = true
+skip = true
+log = "[{name}] {message}"
+
+[output.colors]
+success = "1;32"
+skip = "2"
+debug = "0;37"
+info = "1;37"
+warning = "1;33"
+error = "1;31"
+
+# ===================================================================
+# ====    Postprocessor Options    ==================================
+
+[postprocessor.cbz]
+name = "zip"
+compression = "store"
+extension = "cbz"
+keep-files = false
+mode = "default"
+filter = "extension not in ('zip', 'rar')"
+
+[postprocessor.ugoira-mp4]
+name = "ugoira"
+extension = "mp4"
+ffmpeg-args = [
+  "-c:v",
+  "libx264",
+  "-an",
+  "-b:v",
+  "4M",
+  "-preset",
+  "veryslow"
+]
+ffmpeg-twopass = true
+libx264-prevent-odd = true
+
+[postprocessor.ugoira-gif]
+name = "ugoira"
+extension = "gif"
+ffmpeg-args = [
+  "-filter_complex",
+  "[0:v] split [a][b];[a] palettegen [p];[b][p] paletteuse"
+]
+
+[postprocessor.ugoira-copy]
+name = "ugoira"
+extension = "mkv"
+ffmpeg-args = [ "-c", "copy" ]
+libx264-prevent-odd = false
+repeat-last-frame = false

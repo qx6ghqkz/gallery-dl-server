@@ -59,7 +59,7 @@ services:
 
 ### Python
 
-If you have Python 3.9 or above installed and on your PATH, you can simply run the server using the command line. Clone this repository and install the required dependencies located in `requirements.txt` in a virtual environment.
+If you have Python 3.12 or later installed and on your PATH, you can simply run the server using the command line. Clone this repository and install the required dependencies located in `requirements.txt` in a virtual environment.
 
 Run the command below in the root folder while inside the virtual environment. On Windows, replace `python3` with `python`.
 
@@ -128,22 +128,30 @@ services:
 
 ## Configuration
 
-Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl#configuration).
+Configuration of gallery-dl is as documented in the [official documentation](https://github.com/mikf/gallery-dl#configuration). A configuration file is **required.**
 
-A configuration file is **required.** If running outside of Docker, the [default locations](https://github.com/mikf/gallery-dl#locations) will be used to search for a configuration file. When running *with* Docker, the configuration file must be mounted inside the Docker container in one of the locations where gallery-dl-server will search for the config file.
+If run outside of Docker, the [default locations](https://github.com/mikf/gallery-dl#locations) will be used to search for a configuration file. If run as an executable, the current directory will also be searched for a valid configuration file.
+
+Additionally, YAML and TOML configuration files are supported at any of the pre-defined locations.
+
+When run with Docker, the configuration file must be mounted inside the `/config` directory inside the container.
 
 ### Locations
 
 - `/config/gallery-dl.conf`
+- `/config/gallery-dl.{yaml, yml}`
+- `/config/gallery-dl.toml`
 - `/config/config.json`
+- `/config/config.{yaml, yml}`
+- `/config/config.toml`
 
-A [default configuration file](docs/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if no valid config file exists in that location.
+A [default configuration file](docs/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if no valid configuration file exists in that location.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 
-Any additional locations specified in the configuration file must also exist inside the Docker container. For example, if you specify a cookies file location, make sure that location is accessible from within the Docker container.
+Any additional locations specified in the configuration file must also exist inside the Docker container. For example, if you specify a cookies file location, ensure that location is accessible from within the Docker container.
 
-It is recommended you place any additional files such as archive, cache and cookies files inside the same directory mounted to `/config` along with the config file.
+It is recommended you place any additional files such as archive, cache and cookies files inside the same directory mounted to `/config` along with the configuration file.
 
 ## Usage
 

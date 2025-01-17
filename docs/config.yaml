@@ -1,0 +1,851 @@
+# gallery-dl-server default configuration file 2.0.1
+
+# full documentation at
+# https://gdl-org.github.io/docs/configuration.html
+
+# ===============================================================
+# ====    General Extractor Options    ==========================
+# (these can be set as site-specific extractor options as well)
+
+extractor:
+  base-directory: /gallery-dl/
+  skip: true
+  skip-filter: null
+  user-agent: auto
+  referer: true
+  headers: {}
+  ciphers: null
+  tls12: true
+  browser: null
+  proxy: null
+  proxy-env: true
+  source-address: null
+  retries: 4
+  retry-codes: []
+  timeout: 30
+  verify: true
+  download: true
+  fallback: true
+  archive: null
+  archive-format: null
+  archive-prefix: null
+  archive-pragma: []
+  archive-event:
+    - file
+  archive-mode: file
+  cookies: null
+  cookies-select: null
+  cookies-update: true
+  image-filter: null
+  image-range: null
+  image-unique: false
+  chapter-filter: null
+  chapter-range: null
+  chapter-unique: false
+  keywords: {}
+  keywords-eval: false
+  keywords-default: null
+  parent-directory: false
+  parent-metadata: false
+  parent-skip: false
+  path-restrict: auto
+  path-replace: _
+  path-remove: \u0000-\u001f\u007f
+  path-strip: auto
+  path-extended: true
+  metadata-extractor: null
+  metadata-http: null
+  metadata-parent: null
+  metadata-path: null
+  metadata-url: null
+  metadata-version: null
+  sleep: 0
+  sleep-request: 0
+  sleep-extractor: 0
+  sleep-429: 60
+  actions: []
+  input: null
+  netrc: false
+  extension-map:
+    jpeg: jpg
+    jpe: jpg
+    jfif: jpg
+    jif: jpg
+    jfi: jpg
+  postprocessors:
+    - name: metadata
+      mode: tags
+      whitelist:
+        - danbooru
+        - gelbooru
+
+  # ===============================================================
+  # ====    Site-specific Extractor Options    ====================
+
+  ao3:
+    username: ""
+    password: ""
+    sleep-request: 0.5-1.5
+    formats:
+      - pdf
+  artstation:
+    external: false
+    max-posts: null
+    previews: false
+    videos: true
+    search:
+      pro-first: true
+  aryion:
+    username: ""
+    password: ""
+    recursive: true
+  bbc:
+    width: 1920
+  behance:
+    sleep-request: 2.0-4.0
+    modules:
+      - image
+      - video
+      - mediacollection
+      - embed
+  bilibili:
+    sleep-request: 2.0-4.0
+  bluesky:
+    username: ""
+    password: ""
+    include:
+      - media
+    metadata: false
+    quoted: false
+    reposts: false
+    videos: true
+    post:
+      depth: 0
+  boosty:
+    allowed: true
+    bought: false
+    metadata: false
+    videos: true
+  bunkr:
+    tlds: false
+  cien:
+    sleep-request: 1.0-2.0
+    files:
+      - image
+      - video
+      - download
+      - gallery
+  civitai:
+    api-key: null
+    sleep-request: 0.5-1.5
+    api: trpc
+    files:
+      - image
+    include:
+      - user-models
+      - user-posts
+    metadata: false
+    nsfw: true
+    quality: original=true
+  cohost:
+    asks: true
+    avatar: false
+    background: false
+    pinned: false
+    replies: true
+    shares: true
+  coomerparty:
+    username: ""
+    password: ""
+    announcements: false
+    comments: false
+    dms: false
+    duplicates: false
+    favorites: artist
+    files:
+      - attachments
+      - file
+      - inline
+    max-posts: null
+    metadata: false
+    revisions: false
+    order-revisions: desc
+  cyberdrop:
+    domain: null
+  deviantart:
+    client-id: null
+    client-secret: null
+    refresh-token: null
+    auto-watch: false
+    auto-unwatch: false
+    comments: false
+    comments-avatars: false
+    extra: false
+    flat: true
+    folders: false
+    group: true
+    include: gallery
+    intermediary: true
+    journals: html
+    jwt: false
+    mature: true
+    metadata: false
+    original: true
+    pagination: api
+    previews: false
+    public: true
+    quality: 100
+    wait-min: 0
+    avatar:
+      formats: null
+  exhentai:
+    username: ""
+    password: ""
+    cookies: null
+    sleep-request: 3.0-6.0
+    domain: auto
+    fav: null
+    gp: resized
+    limits: null
+    metadata: false
+    original: true
+    source: null
+    tags: false
+    fallback-retries: 2
+    directory:
+      - "{category}"
+      - "{title}"
+    filename: "{num:>03}.{extension}"
+    postprocessors:
+      - cbz
+  fanbox:
+    cookies: null
+    comments: false
+    embeds: true
+    metadata: false
+  flickr:
+    access-token: null
+    access-token-secret: null
+    sleep-request: 1.0-2.0
+    contexts: false
+    exif: false
+    metadata: false
+    size-max: null
+    videos: true
+  furaffinity:
+    cookies: null
+    descriptions: text
+    external: false
+    include:
+      - gallery
+    layout: auto
+  gelbooru:
+    api-key: null
+    user-id: null
+    favorite:
+      order-posts: desc
+  generic:
+    enabled: false
+  gofile:
+    api-token: null
+    website-token: null
+    recursive: false
+  hentaifoundry:
+    include:
+      - pictures
+  hitomi:
+    format: webp
+  idolcomplex:
+    username: ""
+    password: ""
+    referer: false
+    sleep-request: 3.0-6.0
+  imagechest:
+    access-token: null
+  imagefap:
+    sleep-request: 2.0-4.0
+  imgbb:
+    username: ""
+    password: ""
+  imgur:
+    client-id: null
+    mp4: true
+  inkbunny:
+    username: ""
+    password: ""
+    orderby: create_datetime
+  instagram:
+    cookies: null
+    sleep-request: 6.0-12.0
+    api: rest
+    cursor: true
+    include: posts
+    max-posts: null
+    metadata: false
+    order-files: asc
+    order-posts: asc
+    previews: false
+    videos: true
+  itaku:
+    sleep-request: 0.5-1.5
+    videos: true
+  kemonoparty:
+    username: ""
+    password: ""
+    announcements: false
+    comments: false
+    dms: false
+    duplicates: false
+    favorites: artist
+    files:
+      - attachments
+      - file
+      - inline
+    max-posts: null
+    metadata: false
+    revisions: false
+    order-revisions: desc
+  khinsider:
+    format: mp3
+  koharu:
+    username: ""
+    password: ""
+    sleep-request: 0.5-1.5
+    cbz: true
+    format:
+      - "0"
+      - "1600"
+      - "1280"
+      - "980"
+      - "780"
+    tags: false
+  luscious:
+    gif: false
+  mangadex:
+    username: ""
+    password: ""
+    api-server: https://api.mangadex.org
+    api-parameters: null
+    lang: null
+    ratings:
+      - safe
+      - suggestive
+      - erotica
+      - pornographic
+    postprocessors:
+      - cbz
+  mangoxo:
+    username: ""
+    password: ""
+  newgrounds:
+    username: ""
+    password: ""
+    sleep-request: 0.5-1.5
+    flash: true
+    format: original
+    include:
+      - art
+  nhentai:
+    directory:
+      - "{category}"
+      - "{title}"
+    filename: "{num:>03}.{extension}"
+    postprocessors:
+      - cbz
+  nsfwalbum:
+    referer: false
+  oauth:
+    browser: true
+    cache: true
+    host: localhost
+    port: 6414
+  paheal:
+    metadata: false
+  patreon:
+    cookies: null
+    files:
+      - images
+      - image_large
+      - attachments
+      - postfile
+      - content
+  pillowfort:
+    username: ""
+    password: ""
+    external: false
+    inline: true
+    reblogs: false
+  pinterest:
+    domain: auto
+    sections: true
+    stories: true
+    videos: true
+  pixeldrain:
+    api-key: null
+  pixiv:
+    refresh-token: null
+    cookies: null
+    captions: false
+    comments: false
+    include:
+      - artworks
+    max-posts: null
+    metadata: false
+    metadata-bookmark: false
+    sanity: true
+    tags: japanese
+    ugoira: true
+    postprocessors:
+      - ugoira-copy
+    covers: false
+    embeds: false
+    full-series: false
+    directory:
+      page_count > 1:
+        - "{category}"
+        - "{user[id]} {user[account]}"
+        - "{id} {title}"
+      "":
+        - "{category}"
+        - "{user[id]} {user[account]}"
+    filename:
+      page_count > 1: "{num:>03}.{extension}"
+      "": "{id} {title}.{extension}"
+  plurk:
+    sleep-request: 0.5-1.5
+    comments: false
+  poipiku:
+    sleep-request: 0.5-1.5
+  pornpics:
+    sleep-request: 0.5-1.5
+  readcomiconline:
+    sleep-request: 3.0-6.0
+    captcha: stop
+    quality: auto
+  reddit:
+    client-id: null
+    user-agent: null
+    refresh-token: null
+    comments: 0
+    morecomments: false
+    embeds: true
+    date-min: 0
+    date-max: 253402210800
+    date-format: "%Y-%m-%dT%H:%M:%S"
+    id-min: null
+    id-max: null
+    previews: true
+    recursion: 0
+    videos: true
+    whitelist:
+      - imgur
+      - redgifs
+    parent-directory: true
+    parent-metadata: _reddit
+  reddit>imgur:
+    directory: []
+    filename: "{_reddit[id]} {_reddit[title]} {id}.{extension}"
+  reddit>redgifs:
+    directory: []
+    filename: "{_reddit[id]} {_reddit[title]} {id}.{extension}"
+  redgifs:
+    format:
+      - hd
+      - sd
+      - gif
+  rule34xyz:
+    format:
+      - "10"
+      - "40"
+      - "41"
+      - "2"
+  sankaku:
+    username: ""
+    password: ""
+    id-format: numeric
+    refresh: false
+    tags: false
+  sankakucomplex:
+    embeds: false
+    videos: true
+  scrolller:
+    username: ""
+    password: ""
+    sleep-request: 0.5-1.5
+  skeb:
+    article: false
+    sent-requests: false
+    thumbnails: false
+    search:
+      filters: null
+  smugmug:
+    access-token: null
+    access-token-secret: null
+    videos: true
+  soundgasm:
+    sleep-request: 0.5-1.5
+    directory:
+      - "{category}"
+      - "{user}"
+  steamgriddb:
+    animated: true
+    epilepsy: true
+    humor: true
+    dimensions: all
+    file-types: all
+    languages: all,
+    nsfw: true
+    sort: score_desc
+    static: true
+    styles: all
+    untagged: true
+    download-fake-png: true
+  seiga:
+    username: ""
+    password: ""
+    cookies: null
+  subscribestar:
+    username: ""
+    password: ""
+  tapas:
+    username: ""
+    password: ""
+  tsumino:
+    username: ""
+    password: ""
+  tumblr:
+    access-token: null
+    access-token-secret: null
+    avatar: false
+    date-min: 0
+    date-max: null
+    external: false
+    inline: true
+    offset: 0
+    original: true
+    pagination: offset
+    posts: all
+    ratelimit: abort
+    reblogs: true
+    fallback-delay: 120
+    fallback-retries: 2
+  tumblrgallery:
+    referer: false
+  twitter:
+    username: ""
+    username-alt: ""
+    password: ""
+    cookies: null
+    ads: false
+    cards: false
+    cards-blacklist: []
+    csrf: cookies
+    cursor: true
+    expand: false
+    include:
+      - timeline
+    locked: abort
+    logout: true
+    pinned: false
+    quoted: false
+    ratelimit: wait
+    relogin: true
+    replies: true
+    retweets: false
+    size:
+      - orig
+      - 4096x4096
+      - large
+      - medium
+      - small
+    text-tweets: false
+    tweet-endpoint: auto
+    transform: true
+    twitpic: false
+    unavailable: false
+    unique: true
+    users: user
+    videos: true
+    timeline:
+      strategy: auto
+    tweet:
+      conversations: false
+    directory:
+      quote_id   != 0:
+        - "{category!c}"
+        - "{quote_by}"
+        - quote-retweets
+      retweet_id != 0:
+        - "{category!c}"
+        - "{user[name]}"
+        - retweets
+      "":
+        - "{category!c}"
+        - "{user[name]}"
+    postprocessors:
+      - name: metadata
+        event: post
+        filename: twitter_{author[name]}_{tweet_id}_main.json
+  unsplash:
+    format: raw
+  urlgalleries:
+    sleep-request: 0.5-1.5
+  vipergirls:
+    username: ""
+    password: ""
+    sleep-request: "0.5"
+    domain: vipergirls.to
+    like: false
+  vk:
+    sleep-request: 0.5-1.5
+    offset: 0
+  vsco:
+    include:
+      - gallery
+    videos: true
+  wallhaven:
+    api-key: null
+    include:
+      - uploads
+    metadata: false
+  weasyl:
+    api-key: null
+    metadata: false
+  weibo:
+    sleep-request: 1.0-2.0
+    gifs: true
+    include:
+      - feed
+    livephoto: true
+    retweets: false
+    videos: true
+  ytdl:
+    cmdline-args:
+      - --ignore-errors
+      - --no-cache-dir
+      - --no-playlist
+      - --merge-output-format
+      - mp4
+      - --convert-thumbnails
+      - jpg
+      - --embed-thumbnail
+      - --sub-langs
+      - all
+      - --sub-format
+      - srt/best
+      - --convert-subs
+      - srt
+      - --embed-subs
+      - --embed-metadata
+    config-file: null
+    enabled: true
+    format: bestvideo*+bestaudio/best
+    generic: true
+    logging: true
+    module: yt_dlp
+    raw-options: null
+    directory:
+      - "{subcategory!l}"
+    filename: "{title} [{id}].{extension}"
+  zerochan:
+    username: ""
+    password: ""
+    sleep-request: 0.5-1.5
+    metadata: false
+    pagination: api
+    redirects: false
+
+  # ===============================================================
+  # ====    Base-Extractor and Instance Options    ================
+
+  blogger:
+    api-key: null
+    videos: true
+  Danbooru:
+    sleep-request: 0.5-1.5
+    external: false
+    metadata: false
+    threshold: auto
+    ugoira: false
+  danbooru:
+    username: ""
+    password: ""
+  atfbooru:
+    username: ""
+    password: ""
+  aibooru:
+    username: ""
+    password: ""
+  booruvar:
+    username: ""
+    password: ""
+  E621:
+    sleep-request: 0.5-1.5
+    metadata: false
+    threshold: auto
+  e621:
+    username: ""
+    password: ""
+  e926:
+    username: ""
+    password: ""
+  e6ai:
+    username: ""
+    password: ""
+  foolfuuka:
+    sleep-request: 0.5-1.5
+  archivedmoe:
+    referer: false
+  mastodon:
+    access-token: null
+    cards: false
+    reblogs: false
+    replies: true
+    text-posts: false
+  misskey:
+    access-token: null
+    renotes: false
+    replies: true
+  Nijie:
+    sleep-request: 2.0-4.0
+    include:
+      - illustration
+      - doujin
+  nijie:
+    username: ""
+    password: ""
+  horne:
+    username: ""
+    password: ""
+  nitter:
+    quoted: false
+    retweets: false
+    videos: true
+  philomena:
+    api-key: null
+    sleep-request: 0.5-1.5
+    svg: true
+    filter: 2
+  derpibooru:
+    filter: 56027
+  ponybooru:
+    filter: 3
+  twibooru:
+    sleep-request: 6.0-6.1
+  postmill:
+    save-link-post-body: false
+  reactor:
+    sleep-request: 3.0-6.0
+    gif: false
+  wikimedia:
+    sleep-request: 1.0-2.0
+    limit: 50
+  booru:
+    tags: false
+    notes: false
+    url: file_url
+
+# ===================================================================
+# ====    Downloader Options    =====================================
+
+downloader:
+  filesize-min: null
+  filesize-max: null
+  mtime: true
+  part: true
+  part-directory: null
+  progress: 3
+  proxy: null
+  rate: null
+  retries: 4
+  timeout: 30
+  verify: true
+  http:
+    adjust-extensions: true
+    chunk-size: 32768
+    consume-content: false
+    enabled: true
+    headers: null
+    retry-codes:
+      - 404
+      - 429
+      - 430
+    validate: true
+  ytdl:
+    cmdline-args: null
+    config-file: null
+    enabled: true
+    format: null
+    forward-cookies: true
+    logging: true
+    module: yt_dlp
+    outtmpl: null
+    raw-options: null
+
+# ===================================================================
+# ====    Output Options    =========================================
+
+output:
+  ansi: true
+  fallback: true
+  mode: auto
+  private: false
+  progress: true
+  shorten: true
+  skip: true
+  stdin: null
+  stdout: null
+  stderr: null
+  log: "[{name}] {message}"
+  logfile: null
+  errorfile: null
+  unsupportedfile: null
+  colors:
+    success: 1;32
+    skip: "2"
+    debug: 0;37
+    info: 1;37
+    warning: 1;33
+    error: 1;31
+cache:
+  file: null
+
+# ===================================================================
+# ====    Postprocessor Options    ==================================
+
+postprocessor:
+  cbz:
+    name: zip
+    compression: store
+    extension: cbz
+    files: null
+    keep-files: false
+    mode: default
+    filter: extension not in ('zip', 'rar')
+  ugoira-mp4:
+    name: ugoira
+    extension: mp4
+    ffmpeg-args:
+      - -c:v
+      - libx264
+      - -an
+      - -b:v
+      - 4M
+      - -preset
+      - veryslow
+    ffmpeg-twopass: true
+    libx264-prevent-odd: true
+  ugoira-gif:
+    name: ugoira
+    extension: gif
+    ffmpeg-args:
+      - -filter_complex
+      - "[0:v] split [a][b];[a] palettegen [p];[b][p] paletteuse"
+  ugoira-copy:
+    name: ugoira
+    extension: mkv
+    ffmpeg-args:
+      - -c
+      - copy
+    libx264-prevent-odd: false
+    repeat-last-frame: false
