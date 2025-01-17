@@ -1,9 +1,5 @@
 FROM python:3.12-alpine
 
-LABEL org.opencontainers.image.source=https://github.com/qx6ghqkz/gallery-dl-server
-LABEL org.opencontainers.image.description="Docker image for gallery-dl-server, a simple web and REST interface designed for downloading media using gallery-dl and yt-dlp. It serves as middleware, allowing users to supply URLs to the server through a user-friendly web UI and API. The server processes requests to fetch media from a wide range of sources and allows users to monitor progress through real-time logging."
-LABEL org.opencontainers.image.licenses=MIT
-
 RUN apk add --no-cache \
   bash \
   ffmpeg \
