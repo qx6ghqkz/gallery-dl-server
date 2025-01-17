@@ -7,18 +7,18 @@ WINDOWS = os.name == "nt"
 DOCKER = os.path.isfile("/.dockerenv")
 KUBERNETES = os.environ.get("KUBERNETES_SERVICE_HOST") is not None
 EXECUTABLE = bool(getattr(sys, "frozen", False))
-_MEIPASS_PATH = getattr(sys, "_MEIPASS", None)
+MEIPASS_PATH = getattr(sys, "_MEIPASS", None)
 
 CONTAINER = DOCKER or KUBERNETES
-_MEIPASS = _MEIPASS_PATH is not None
-PYINSTALLER = EXECUTABLE and _MEIPASS
+MEIPASS = MEIPASS_PATH is not None
+PYINSTALLER = EXECUTABLE and MEIPASS
 
 
 def resource_path(relative_path: str):
     """Return absolute path to resource for frozen PyInstaller executable."""
     if PYINSTALLER:
-        assert _MEIPASS_PATH
-        return os.path.join(_MEIPASS_PATH, relative_path)
+        assert MEIPASS_PATH
+        return os.path.join(MEIPASS_PATH, relative_path)
     else:
         return relative_path
 
