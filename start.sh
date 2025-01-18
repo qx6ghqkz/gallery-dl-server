@@ -66,7 +66,16 @@ start() {
 
 init_conf() {
   dir="/config"
-  files=("gallery-dl.conf" "config.json")
+  files=(
+    "gallery-dl.conf"
+    "gallery-dl.yaml"
+    "gallery-dl.yml"
+    "gallery-dl.toml"
+    "config.json"
+    "config.yaml"
+    "config.yml"
+    "config.toml"
+  )
 
   if [[ -d "$dir" ]]; then
     rm -f "$dir/hosts" "$dir/hostname" "$dir/resolv.conf" >/dev/null 2>&1

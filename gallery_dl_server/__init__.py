@@ -37,7 +37,7 @@ async def redirect(request: Request):
     return RedirectResponse(url="/gallery-dl")
 
 
-async def dl_queue_list(request: Request):
+async def homepage(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {
@@ -49,18 +49,18 @@ async def dl_queue_list(request: Request):
     )
 
 
-async def q_put(request: Request):
+async def submit_form(request: Request):
     global blank_sent
 
     if not blank_sent:
         blank.info("")
         blank_sent = True
 
-    form = await request.form()
+    form_data = await request.form()
 
-    url = form.get("url")
-    ui = form.get("ui")
-    video_opts = form.get("video-opts")
+    url = form_data.get("url")
+    ui = form_data.get("ui")
+    video_opts = form_data.get("video-opts")
 
     data = [url, ui, video_opts]
     data = [None if isinstance(value, UploadFile) else value for value in data]
@@ -165,8 +165,8 @@ templates = Jinja2Templates(directory=utils.resource_path("templates"))
 
 routes = [
     Route("/", endpoint=redirect, methods=["GET"]),
-    Route("/gallery-dl", endpoint=dl_queue_list, methods=["GET"]),
-    Route("/gallery-dl/q", endpoint=q_put, methods=["POST"]),
+    Route("/gallery-dl", endpoint=homepage, methods=["GET"]),
+    Route("/gallery-dl/q", endpoint=submit_form, methods=["POST"]),
     Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
     Mount("/icons", app=StaticFiles(directory=utils.resource_path("icons")), name="icons"),
 ]
