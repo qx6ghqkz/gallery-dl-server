@@ -1,4 +1,10 @@
 {
+  "files.associations": {
+    "*.html": "jinja-html"
+  },
+  "emmet.includeLanguages": {
+    "jinja-html": "html"
+  },
   "python.analysis.typeCheckingMode": "basic",
   "[python]": {
     "editor.formatOnSave": true,

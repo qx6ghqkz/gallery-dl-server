@@ -243,6 +243,25 @@
         });
       }
 
+      document.addEventListener("DOMContentLoaded", (event) => {
+          setSelectedValue();
+          const selectElement = document.querySelector("select[name='video-opts']");
+          selectElement.addEventListener("change", storeSelectedValue);
+      });
+
+      function setSelectedValue() {
+          const selectedValue = localStorage.getItem("selectedValue");
+          if (selectedValue) {
+              const selectElement = document.querySelector("select[name='video-opts']");
+              selectElement.value = selectedValue;
+          }
+      }
+
+      function storeSelectedValue() {
+          const selectElement = document.querySelector("select[name='video-opts']");
+          localStorage.setItem("selectedValue", selectElement.value);
+      }
+
       fetchLogs();
 
       setInterval(fetchLogs, 1000);
