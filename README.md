@@ -87,6 +87,16 @@ set "HOST=0.0.0.0" && set "PORT=9080" && gallery-dl-server.exe
 
 The executable utilises the same environment variable overrides as the Python package.
 
+### Dependencies
+
+All required Python and non-Python dependencies are included in the Docker image and will be available in the running container, however if you are running gallery-dl-server using any of the other methods, i.e. not with a Docker container, there are some considerations to be made.
+
+In order to run with Python, the required dependencies in `requirements.txt` need to be installed in the running Python environment. These Python dependencies are included in the standalone executable and do not need to be installed.
+
+Non-Python dependencies are **not included**. The most important of these and strongly recommended is [FFmpeg](https://ffmpeg.org), which is required primarily by yt-dlp for video and audio conversion and should be accessible from the command line, i.e. on the PATH.
+
+Dependencies for [gallery-dl](https://github.com/mikf/gallery-dl#dependencies) and [yt-dlp](https://github.com/yt-dlp/yt-dlp#dependencies) are documented in their respective repositories. The majority of these are optional Python dependencies and can safely be ignored, however the [strongly recommended dependencies](https://github.com/yt-dlp/yt-dlp#strongly-recommended) should be installed.
+
 ### Port Mapping
 
 By default, this service listens on port 9080. You can use any value for the host port, but if you would like to map to a different internal container port, you need to set the `CONTAINER_PORT` environment variable. This can be done using the `-e` flag with `docker run` or in a Docker Compose file.
