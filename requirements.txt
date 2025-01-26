@@ -1,6 +1,9 @@
 aiofiles==24.1.0
+brotli==1.1.0
 gallery_dl==1.28.5
 Jinja2==3.1.5
+mutagen==1.47.0
+pycryptodomex==3.21.0
 python-multipart==0.0.20
 PyYAML==6.0.2
 requests==2.32.3
