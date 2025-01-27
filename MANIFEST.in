@@ -1,0 +1,7 @@
+include README.md LICENSE
+
+recursive-include docs *.conf
+recursive-include docs config.*
+
+recursive-include icons *
+recursive-include templates *

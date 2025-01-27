@@ -54,7 +54,8 @@ class Logger(logging.Logger):
     def log_multiline(self, level: int, message: str):
         """Log each line of a multi-line message separately."""
         for line in message.split("\n"):
-            self.log(level, line)
+            if line.strip():
+                self.log(level, line.rstrip())
 
 
 class Formatter(logging.Formatter):
@@ -153,7 +154,7 @@ class QueueHandler(logging.Handler):
         self.queue = queue
 
     def emit(self, record: logging.LogRecord):
-        record.msg = remove_ansi_escape_sequences(self.format(record))
+        record.msg = self.format(record).strip()
         record.args = ()
         record_dict = record_to_dict(record)
 
@@ -284,7 +285,9 @@ class StringHandler(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        self.buffer.write(msg + self.terminator)
+
+        if msg.strip():
+            self.buffer.write(msg.strip() + self.terminator)
 
     def get_logs(self):
         """Retrieve logs from the string object."""
@@ -315,3 +318,25 @@ def join(_list: list[str]):
         formatted_list.append(f"'{item}'")
 
     return ", ".join(formatted_list)
+
+
+def configure_uvicorn_logs():
+    """Configure uvicorn logging behaviour."""
+    main = logging.getLogger("uvicorn")
+    error = logging.getLogger("uvicorn.error")
+
+    if LOG_LEVEL > logging.DEBUG:
+        error.addFilter(Filter())
+
+    return main
+
+
+class Filter(logging.Filter):
+    """Filter out specific log messages."""
+
+    def filter(self, record):
+        return not (
+            "WebSocket /ws/logs" in record.getMessage()
+            or "connection open" in record.getMessage()
+            or "connection closed" in record.getMessage()
+        )

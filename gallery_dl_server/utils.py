@@ -37,3 +37,19 @@ def get_package_name():
     """Return the name of the package."""
     fallback = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
     return __package__ if __package__ else fallback
+
+
+def normalise_path(path: str):
+    """Expands environment variables in the given path, normalises it,
+    and returns the absolute path."""
+    return os.path.abspath(os.path.normpath(os.path.expandvars(path)))
+
+
+def is_imported(module_name: str):
+    """Check if a module has been imported."""
+    return module_name in sys.modules
+
+
+def filter_integers(values: list[int | str | None]):
+    """Return only the integer values in a list."""
+    return [value for value in values if isinstance(value, int)]
