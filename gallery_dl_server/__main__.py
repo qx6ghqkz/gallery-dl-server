@@ -1,19 +1,36 @@
 # -*- coding: utf-8 -*-
 
-import os
 import multiprocessing
 
 import uvicorn
 
-import gallery_dl_server
+from gallery_dl_server import output, options, app
+
+
+log = output.initialise_logging(__name__)
+
+
+def main():
+    multiprocessing.freeze_support()
+
+    args = options.parse_args()
+
+    opts = {
+        "app": app,
+        "host": args.host,
+        "port": args.port,
+        "log_level": args.log_level,
+        "access_log": args.access_log,
+    }
+
+    config = uvicorn.Config(**opts)
+    server = uvicorn.Server(config)
+
+    try:
+        server.run()
+    except KeyboardInterrupt as e:
+        log.debug(f"Exception: {type(e).__name__}")
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    uvicorn.run(
-        gallery_dl_server.app,
-        host=os.environ.get("HOST", "0.0.0.0"),
-        port=int(os.environ.get("PORT", 0)),
-        log_level=os.environ.get("LOG_LEVEL", "info"),
-        access_log=os.environ.get("ACCESS_LOG", "False") == "True",
-    )
+    main()

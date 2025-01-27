@@ -44,10 +44,12 @@ drafts/
 gallery-dl/
 logs/
 
-# PyInstaller
+# Build
 build/
 dist/
+*.egg-info/
 *.spec
+MANIFEST.in
 
 # Config
 docs/config.*

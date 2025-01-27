@@ -6,9 +6,6 @@ import logging
 
 from typing import Any
 
-import tomllib as toml
-import yaml
-
 from gallery_dl import config
 
 from . import output, utils
@@ -70,9 +67,11 @@ def get_new_configs(_configs: list[str], exts: list[str]) -> list[str]:
 
 def load(_configs: list[str]):
     """Load configuration files."""
-    exit_codes = []
-    messages = []
-    loaded = 0
+    configs_found: list[str] = []
+    configs_loaded: list[str] = []
+
+    exit_codes: list[int | str | None] = []
+    messages: list[str] = []
 
     new_exts = [".yaml", ".yml", ".toml"]
 
@@ -84,35 +83,76 @@ def load(_configs: list[str]):
     log_buffer = output.StringLogger()
 
     for path in _configs:
-        try:
-            if path.endswith((".conf", ".json")):
-                config.load([path], strict=True)
-            if path.endswith((".yaml", ".yml")):
-                config.load([path], strict=True, loads=yaml.safe_load)
-            if path.endswith(".toml"):
-                config.load([path], strict=True, loads=toml.loads)
-        except SystemExit as e:
-            exit_codes.append(e.code)
-            if e.code == 2:
+        normal_path = utils.normalise_path(path)
+
+        if os.path.isfile(normal_path):
+            configs_found.append(normal_path)
+            log.info(f"Configuration file found: {normal_path}")
+
+            try:
+                if path.endswith((".conf", ".json")):
+                    config.load([path], strict=True)
+                elif path.endswith((".yaml", ".yml")):
+                    try:
+                        if not utils.is_imported("yaml"):
+                            import yaml
+                    except ImportError as e:
+                        exit_codes.append(3)
+                        messages.append(f"{type(e).__name__}: {e}")
+                        continue
+
+                    config.load([path], strict=True, loads=yaml.safe_load)
+                elif path.endswith(".toml"):
+                    try:
+                        if not utils.is_imported("tomllib"):
+                            import tomllib as toml
+                    except ImportError:
+                        try:
+                            if not utils.is_imported("toml"):
+                                import toml  # type: ignore
+                        except ImportError as e:
+                            exit_codes.append(4)
+                            messages.append(f"{type(e).__name__}: {e}")
+                            continue
+
+                    config.load([path], strict=True, loads=toml.loads)
+
+                configs_loaded.append(path)
+            except SystemExit as e:
+                exit_codes.append(e.code)
                 messages.append(log_buffer.get_logs().split(output.LOG_SEPARATOR)[-1])
-        else:
-            loaded += 1
 
     log_buffer.close()
 
-    if loaded > 0:
+    if configs_loaded:
         log.info(f"Loaded gallery-dl configuration file(s): [{output.join(_files)}]")
     else:
-        if 2 not in exit_codes:
+        if all(code not in exit_codes for code in [2, 3, 4]):
             log.error("Loading configuration files failed with exit code: 1")
-            log.info(f"Valid configuration file locations: [{output.join(_configs)}]")
-        else:
+
+            if not configs_found:
+                log.info(f"Valid configuration file locations: [{output.join(_configs)}]")
+        elif all(code not in exit_codes for code in [3, 4]):
             log.error("Loading configuration files failed with exit code: 2")
+        elif 2 not in exit_codes:
+            log.error("Loading configuration files failed due to missing imports.")
 
     for message in messages:
         log.log_multiline(logging.ERROR, message)
 
-    if loaded == 0:
+    if 3 in exit_codes:
+        log.info("Install 'PyYAML' to load YAML configuration files")
+
+    if 4 in exit_codes:
+        log.info("Install 'toml' or use Python >= 3.11 to load TOML configuration files")
+
+    if exit_codes:
+        unique_exit_codes = sorted(set(utils.filter_integers(exit_codes)))
+
+        if unique_exit_codes:
+            log.debug(f"Exit codes: {unique_exit_codes}")
+
+    if not configs_loaded:
         raise SystemExit(1)
 
 

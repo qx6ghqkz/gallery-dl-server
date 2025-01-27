@@ -6,7 +6,7 @@
 
 Web UI for [`gallery-dl`](https://github.com/mikf/gallery-dl) with support for downloading videos via [`yt-dlp`](https://github.com/yt-dlp/yt-dlp).
 
-![screenshot](images/gallery-dl-server.png)
+![screenshot](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/images/gallery-dl-server.png)
 
 ## Running
 
@@ -30,7 +30,7 @@ docker run -d \
 
 This is an example service definition that could be put in `docker-compose.yaml`. This service uses a VPN client container for its networking.
 
-[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN usage. See [docs/docker-compose.yaml](docs/docker-compose.yaml) for a template.
+[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN usage. See [docs/docker-compose.yaml](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/docs/docker-compose.yaml) for a template.
 
 ```yaml
 services:
@@ -59,41 +59,51 @@ services:
 
 ### Python
 
-If you have Python 3.12 or later installed and on your PATH, you can simply run the server using the command line. Clone this repository and install the required dependencies located in `requirements.txt` in a virtual environment.
+If you have Python 3.10 or later (3.12 is recommended) installed and on your PATH, you can simply run the server using the command line. Clone this repository and install the dependencies located in `requirements.txt` in a virtual environment.
 
 Run the command below in the root folder while inside the virtual environment. On Windows, replace `python3` with `python`.
 
 ```shell
-python3 -m uvicorn gallery_dl_server:app --host "0.0.0.0" --port "9080" --log-level "info" --no-access-log
+python3 -m gallery_dl_server --host "0.0.0.0" --port "9080"
 ```
 
-The program can also be run as a package, and optional environment variable overrides can be provided inline. On Windows, this can be done using `set "VAR=value" &&` in Command Prompt or `$env:VAR="value";` in PowerShell.
+The command-line arguments are optional. By default, the server will run on host `0.0.0.0` and an available port will be selected if one is not provided.
 
-```shell
-HOST="0.0.0.0" PORT="9080" LOG_LEVEL="info" ACCESS_LOG="False" python3 -m gallery_dl_server
-```
+To view the full list of command-line arguments, perform `python3 -m gallery_dl_server -h`. These arguments can also be specified as environment variables.
 
-When running as a package, a random available port will be selected if `PORT` is not set as an environment variable.
+### Installation
+
+The package can be installed along with its dependencies by performing `pip install .` in the root directory of the repository. To install optional dependencies, perform `pip install .[full]`. It is recommended to install in a virtual environment to avoid dependency conflicts.
+
+Installation will allow running directly from the command line via the command `gallery-dl-server`.
 
 ### Standalone Executable
 
 On Windows, the program can be run using the prebuilt executable (.exe) file, which includes a Python interpreter and the required Python packages. Prebuilt executables for each release can be found in [Releases](https://github.com/qx6ghqkz/gallery-dl-server/releases).
 
-By default, any available port will be selected. To select a specific port, run the executable from the command line with `PORT` set as an environment variable.
+By default, any available port will be selected. To select a specific port, run the executable from the command line and specify the port, and optionally host, as a command-line argument.
 
 ```cmd
-set "HOST=0.0.0.0" && set "PORT=9080" && gallery-dl-server.exe
+gallery-dl-server.exe --host "0.0.0.0" --port "9080"
 ```
-
-The executable utilises the same environment variable overrides as the Python package.
 
 ### Dependencies
 
-All required Python and non-Python dependencies are included in the Docker image and will be available in the running container, however if you are running gallery-dl-server using any of the other methods, i.e. not with a Docker container, there are some considerations to be made.
+All required and optional Python and non-Python dependencies are included in the Docker image and will be available in the running container, however if you are running gallery-dl-server using any of the other methods, i.e. not with a Docker container, there are some considerations.
 
-In order to run with Python, the required dependencies in `requirements.txt` need to be installed in the running Python environment. These Python dependencies are included in the standalone executable and do not need to be installed.
+In order to run with Python, the dependencies in `requirements.txt` need to be installed in the running Python environment. These Python dependencies are included in the standalone executable and do not need to be installed.
 
-Non-Python dependencies are **not included**. The most important of these and strongly recommended is [FFmpeg](https://ffmpeg.org), which is required primarily by yt-dlp for video and audio conversion and should be accessible from the command line, i.e. on the PATH.
+Installation with `pip install .` only installs the required dependencies. To install all dependencies, including optional dependencies, use `pip install .[full]`.
+
+#### Optional Dependencies
+
+- [brotli](https://github.com/google/brotli) or [brotlicffi](https://github.com/python-hyper/brotlicffi): Brotli content encoding support
+- [mutagen](https://github.com/quodlibet/mutagen): embed metadata and thumbnails in certain formats
+- [pycryptodomex](https://github.com/Legrandin/pycryptodome): decrypt AES-128 HLS streams and other forms of data
+- [pyyaml](https://pyyaml.org): YAML configuration file support
+- [toml](https://pypi.org/project/toml): TOML configuration file support (<= Python 3.10 only)
+
+Non-Python dependencies are **not included** in any form. The most important of these and strongly recommended is [FFmpeg](https://ffmpeg.org), which is required primarily by yt-dlp for video and audio conversion and should be accessible from the command line, i.e. on the PATH. There is also [MKVToolNix](https://mkvtoolnix.download/index.html), which includes [mkvmerge](https://www.matroska.org/downloads/mkvtoolnix.html) for accurate [Ugoira](https://www.pixiv.help/hc/en-us/articles/235584628-What-are-Ugoira) frame timecodes.
 
 Dependencies for [gallery-dl](https://github.com/mikf/gallery-dl#dependencies) and [yt-dlp](https://github.com/yt-dlp/yt-dlp#dependencies) are documented in their respective repositories. The majority of these are optional Python dependencies and can safely be ignored, however the [strongly recommended dependencies](https://github.com/yt-dlp/yt-dlp#strongly-recommended) should be installed.
 
@@ -155,7 +165,7 @@ When run with Docker, the configuration file must be mounted inside the `/config
 - `/config/config.{yaml, yml}`
 - `/config/config.toml`
 
-A [default configuration file](docs/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if no valid configuration file exists in that location.
+A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/docs/gallery-dl.conf) for use with gallery-dl-server has been provided and will automatically be placed in the directory mounted to `/config` if no valid configuration file exists in that location.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 

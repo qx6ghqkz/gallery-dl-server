@@ -1,5 +1,9 @@
+# Visual Studio
+.vscode/
+
 # Cache
 __pycache__/
+.ruff_cache/
 
 # Scripts
 scripts/
@@ -18,7 +22,8 @@ drafts/
 gallery-dl/
 logs/
 
-# PyInstaller
+# Build
 build/
 dist/
+*.egg-info/
 *.spec

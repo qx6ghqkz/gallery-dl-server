@@ -2,20 +2,21 @@
 <html lang="en" class="h-100">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Web frontend for gallery-dl with yt-dlp" />
+
+    <title>gallery-dl-server</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kristi&display=swap" rel="stylesheet">
 
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
-    ></script>
-
-    <script
-      src="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.1/dist/sweetalert2.all.min.js"
-      integrity="sha384-ysFr4PSV/lA9bf8eoOUkonFyFfwPpG7zpz8m7yerz6d5d5xODn3IvFm0ez+vgtZB"
-      crossorigin="anonymous"
-    ></script>
+      >
+    </script>
 
     <link
       rel="stylesheet"
@@ -23,6 +24,13 @@
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous"
     />
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.1/dist/sweetalert2.all.min.js"
+      integrity="sha384-ysFr4PSV/lA9bf8eoOUkonFyFfwPpG7zpz8m7yerz6d5d5xODn3IvFm0ez+vgtZB"
+      crossorigin="anonymous"
+      >
+    </script>
 
     <link
       rel="stylesheet"
@@ -67,6 +75,79 @@
         background-color: #43045a;
       }
 
+      header {
+        color: #bb00ff;
+        background-color: #310342;
+        white-space: nowrap;
+      }
+
+      header a {
+        color: #dcdcdc;
+        font-size: 16px;
+        line-height: 1;
+        text-decoration: none;
+        position: relative;
+        display: inline-block;
+        transition: color 0.2s ease, tranform 0.2s ease;
+      }
+
+      header a:hover {
+        color: #bb00ff;
+        text-decoration: underline;
+        transform: translateY(-1px);
+      }
+
+      #header-left a {
+        margin-right: 26px;
+      }
+
+      #header-right a {
+        padding-right: 0.15rem;
+      }
+
+      #home {
+        color: #f0f0f0;
+        font-size: 32px;
+        font-family: "Kristi", sans-serif;
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      #home:hover {
+        color:#bb00ff;
+        text-decoration: none;
+        transform: none;
+      }
+
+      h1, a {
+        white-space: nowrap;
+      }
+
+      #success-alert {
+        color: #bb00ff;
+      }
+
+      body a:not(header a, #success-alert) {
+        color: white;
+        transition: color 0.2s ease;
+      }
+
+      body a:not(header a, #success-alert):hover {
+        color: #bb00ff;
+      }
+
+      div.input-group > input,
+      div.input-group > select.form-select {
+        outline: none;
+        transition: border 0.2s linear, box-shadow 0.2s linear;
+      }
+
+      div.input-group > input:focus,
+      div.input-group > select.form-select:focus {
+        border: 1px solid #bb00ff;
+        box-shadow: 0 0 5px #bb00ff;
+      }
+
       div.input-group > select.form-select {
         flex: 0.1 1 100px;
         max-width: 30%;
@@ -77,18 +158,31 @@
         font-style: normal;
       }
 
+      .btn-custom {
+        color: white;
+        border-color: white;
+        background-color: transparent;
+        transition: border-color 0.2s ease, background-color 0.2s ease;
+      }
+
+      .btn-custom:hover {
+        border-color: #8300b3;
+        background-color: #8300b3;
+      }
+
       #box {
         resize: vertical;
         overflow-y: auto;
-        min-height: 95px;
-        height: 175px;
-        width: 85%;
+        min-height: 20.81vh;
+        max-height: 88.80vh;
+        height: 26.62vh;
+        width: 90%;
+        color: #dedad6;
+        background-color: #181a1b;
         border: 1px solid #333333;
         border-radius: 10px;
-        background-color: #181a1b;
         padding: 10px;
         text-align: left;
-        color: #dedad6;
         font-family: monospace;
         font-size: 12px;
         line-height: 16px;
@@ -96,36 +190,51 @@
       }
 
       textarea {
-        transition: border linear .2s, box-shadow linear .2s;
         outline: none;
+        transition: border 0.2s linear, box-shadow 0.2s linear;
       }
 
       textarea:focus {
-        border: 1px solid rgba(11, 94, 215, 1);
-        box-shadow: 0 0 5px rgba(11, 94, 215, 1);
+        border: 1px solid #bb00ff;
+        box-shadow: 0 0 5px #bb00ff;
       }
 
-      footer > p {
+      footer {
+        color: rgba(255, 255, 255, 0.6);
         font-size: 16px;
-        line-height: 16px;
+        line-height: 1.2;
       }
     </style>
-
-    <title>gallery-dl</title>
   </head>
 
-  <body class="d-flex h-100 text-center text-white">
-    <div class="container d-flex w-100 p-3 pb-0 flex-column">
-      <header class="mb-auto"></header>
+  <body class="d-flex flex-column h-100 text-center text-white">
+    <header class="container-fluid d-flex justify-content-between align-items-center px-3 py-1">
+      <div id="header-left">
+        <a id="home" class="py-0" href="/gallery-dl">dl</a>
+        <a id="logs" class="py-3" href="/gallery-dl/logs" >Logs</a>
+      </div>
 
-      <main class="px-3">
+      <div id="header-right">
+        <a
+          href="https://github.com/qx6ghqkz/gallery-dl-server"
+          target="_blank"
+          rel="noopener noreferrer"
+          >gallery-dl-server</a
+        >
+        v{{ app_version }}</div
+      >
+    </header>
+
+    <main class="container d-flex flex-column flex-grow-1 p-3 pb-0">
+      <div class="mb-auto"></div>
+
+      <div class="px-3">
         <h1 class="mb-2 display-4">gallery-dl</h1>
 
         <p class="mb-3 lead">
           Enter a URL to download the contents to the server.
           The URL can be from any supported site listed by
           <a
-            class="text-info"
             href="https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md"
             target="_blank"
             rel="noopener noreferrer"
@@ -133,7 +242,6 @@
           >
           or
           <a
-            class="text-info"
             href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md"
             target="_blank"
             rel="noopener noreferrer"
@@ -143,6 +251,7 @@
 
         <form class="mb-4" action="/gallery-dl/q" method="POST">
           <input type="hidden" name="ui" value="true" />
+
           <div class="input-group">
             <input
               name="url"
@@ -163,55 +272,49 @@
               </optgroup>
             </select>
 
-            <button class="btn btn-primary" type="submit" id="button-submit">
-              Submit
-            </button>
+            <button id="button-submit" class="btn btn-custom" type="submit">Submit</button>
           </div>
         </form>
 
-        <div class="mb-4" id="container-btn">
-          <button id="btn-logs" class="btn btn-outline-light" onclick="toggleLogs()">Show Logs</button>
+        <div id="container-toggle" class="mb-4">
+          <button id="button-logs" class="btn btn-custom" onclick="toggleLogs()">Show Logs</button>
         </div>
 
-        <div class="mb-4" id="container-logs">
-          <textarea id="box" name="Logs" placeholder="Logs output" readonly style="display: none"></textarea>
+        <div id="container-logs" class="mb-0">
+          <textarea id="box" name="Logs" placeholder="Logs output" style="display: none" readonly></textarea>
         </div>
-      </main>
+      </div>
 
-      <footer class="mt-auto text-white-50">
-        <p class="mb-3">
-          <a
-            class="text-white"
-            href="https://github.com/qx6ghqkz/gallery-dl-server"
-            target="_blank"
-            rel="noopener noreferrer"
-            >gallery-dl-server</a
-          >
-          v{{ app_version }}</p
+      <div class="mt-auto"></div>
+    </main>
+
+    <footer class="container-fluid px-3 py-4">
+      <div>
+        Web frontend for
+        <a
+          href="https://github.com/mikf/gallery-dl"
+          target="_blank"
+          rel="noopener noreferrer"
+          >gallery-dl</a
         >
-        <p style="margin-bottom: 28px">
-          Web frontend for
-          <a
-            class="text-white"
-            href="https://github.com/mikf/gallery-dl"
-            target="_blank"
-            rel="noopener noreferrer"
-            >gallery-dl</a
-          >
-          v{{ gallery_dl_version }} with
-          <a
-            class="text-white"
-            href="https://github.com/yt-dlp/yt-dlp"
-            target="_blank"
-            rel="noopener noreferrer"
-            >yt-dlp</a
-          >
-          v{{ yt_dlp_version }}</p
+        v{{ gallery_dl_version }} with
+        <a
+          href="https://github.com/yt-dlp/yt-dlp"
+          target="_blank"
+          rel="noopener noreferrer"
+          >yt-dlp</a
         >
-      </footer>
-    </div>
+        v{{ yt_dlp_version }}</div
+      >
+    </footer>
 
     <script>
+      let isPageAlive = true;
+
+      window.addEventListener("beforeunload", () => {
+          isPageAlive = false;
+      });
+
       const urlParams = new URLSearchParams(window.location.search);
       const added = urlParams.get("added");
 
@@ -239,38 +342,61 @@
       if (added) {
         Success.fire({
           title: "Success!",
-          html: "Added <a href=" + added + ">one item</a> to the download queue.",
+          html: "Added <a id='success-alert' href=" + added + ">one item</a> to the download queue.",
         });
       }
 
       document.addEventListener("DOMContentLoaded", (event) => {
-          setSelectedValue();
-          const selectElement = document.querySelector("select[name='video-opts']");
-          selectElement.addEventListener("change", storeSelectedValue);
+        setSelectedValue();
+        const selectElement = document.querySelector("select[name='video-opts']");
+        selectElement.addEventListener("change", storeSelectedValue);
       });
 
       function setSelectedValue() {
-          const selectedValue = localStorage.getItem("selectedValue");
-          if (selectedValue) {
-              const selectElement = document.querySelector("select[name='video-opts']");
-              selectElement.value = selectedValue;
-          }
+        const selectedValue = localStorage.getItem("selectedValue");
+        if (selectedValue) {
+          const selectElement = document.querySelector("select[name='video-opts']");
+          selectElement.value = selectedValue;
+        }
       }
 
       function storeSelectedValue() {
-          const selectElement = document.querySelector("select[name='video-opts']");
-          localStorage.setItem("selectedValue", selectElement.value);
+        const selectElement = document.querySelector("select[name='video-opts']");
+        localStorage.setItem("selectedValue", selectElement.value);
       }
 
-      fetchLogs();
+      scrollOnResize();
 
-      setInterval(fetchLogs, 1000);
+      function scrollOnResize() {
+        const resizableBox = document.getElementById("box");
+
+        let lastHeight = resizableBox.offsetHeight;
+
+        const observer = new ResizeObserver(entries => {
+          for (let entry of entries) {
+            if (entry.contentRect.height > lastHeight) {
+              window.scrollTo({
+                top: entry.target.getBoundingClientRect().bottom + window.scrollY,
+                  behavior: "smooth"
+              });
+            }
+            lastHeight = entry.contentRect.height;
+          }
+        });
+
+        observer.observe(resizableBox);
+      }
+
+      let ws;
+      let isConnected = false;
+
+      fetchLogs();
 
       async function fetchLogs() {
         const box = document.getElementById("box");
 
         try {
-          const response = await fetch("/gallery-dl/logs", {
+          const response = await fetch("/stream/logs", {
             method: "GET",
             headers: {
               "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -289,11 +415,55 @@
             box.textContent = logs;
             box.scrollTop = box.scrollHeight;
           }
+
+          if (!isConnected) {
+            connectWebSocket(box);
+          }
         }
         catch (error) {
           console.error(error.message);
         }
       }
+
+      function connectWebSocket(box) {
+        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+        const host = window.location.host;
+        const url = `${protocol}${host}/ws/logs`;
+
+        ws = new WebSocket(url);
+
+        ws.onopen = function(event) {
+            console.log("WebSocket connection established.");
+            isConnected = true;
+        };
+
+        ws.onmessage = function(event) {
+          box.textContent += event.data;
+          box.scrollTop = box.scrollHeight;
+        };
+
+        ws.onerror = function(event) {
+          console.error("WebSocket error:", event);
+        };
+
+        ws.onclose = function(event) {
+            if (isConnected) {
+              isConnected = false
+
+              if (isPageAlive) {
+                console.log("WebSocket connection closed. Attempting to reconnect...");
+              }
+
+              setTimeout(() => connectWebSocket(box), 1000);
+            } else {
+              console.log("WebSocket connection could not be established.")
+            }
+        };
+      }
+
+      document.addEventListener("beforeunload", function() {
+        ws.close(1000, "User is leaving the page");
+      });
 
       if (localStorage.getItem("logs") == "shown") {
         toggleLogs();
@@ -301,7 +471,7 @@
 
       function toggleLogs() {
         const box = document.getElementById("box");
-        const btn = document.getElementById("btn-logs");
+        const btn = document.getElementById("button-logs");
 
         if (btn.innerText == "Show Logs") {
           btn.innerText = "Hide Logs";
