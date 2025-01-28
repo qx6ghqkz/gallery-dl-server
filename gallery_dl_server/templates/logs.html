@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Logs</title>
+    <title>Logs - gallery-dl-server</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" />
@@ -55,91 +55,8 @@
       href="{{ url_for('static', path='/icons/site.webmanifest') }}"
     />
 
-    <style>
-      body {
-        background-color: #121212;
-      }
-
-      header {
-        color: #bb00ff;
-        background-color: #310342;
-        white-space: nowrap;
-      }
-
-      header a {
-        color: #dcdcdc;
-        font-size: 16px;
-        line-height: 1;
-        text-decoration: none;
-        position: relative;
-        display: inline-block;
-        transition: color 0.2s ease, tranform 0.2s ease;
-      }
-
-      header a:hover {
-        color: #bb00ff;
-        text-decoration: underline;
-        transform: translateY(-1px);
-      }
-
-      #header-left a {
-        margin-right: 26px;
-      }
-
-      #header-right a {
-        padding-right: 0.15rem;
-      }
-
-      #home {
-        color: #f0f0f0;
-        font-size: 32px;
-        font-family: "Kristi", sans-serif;
-        font-weight: 400;
-        font-style: normal;
-      }
-
-      #home:hover {
-        color: #bb00ff;
-        text-decoration: none;
-        transform: none;
-      }
-
-      main {
-        font-family: Arial , sans-serif;
-        background-color: #121212;
-        color: #e0e0e0;
-      }
-
-      main h1 {
-        color: white;
-      }
-
-      main a {
-        margin-left: 0.2rem;
-      }
-
-      .btn-custom {
-        color: white;
-        border-color: white;
-        background-color: transparent;
-        transition: border-color 0.2s ease, background-color 0.2s ease;
-      }
-
-      .btn-custom:hover {
-        border-color: #8300b3;
-        background-color: #8300b3;
-      }
-
-      pre {
-        background-color: #1e1e1e;
-        padding: 10px;
-        border: 1px solid #444;
-        overflow: auto;
-        scrollbar-color: #454a4d #202324;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-      }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}?v=0.1.0">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/logs.css') }}?v=0.1.0">
   </head>
 
   <body class="d-flex flex-column h-100">
@@ -175,11 +92,6 @@
       <pre id="logContainer" class="h-100 m-3">{{ logs }}</pre>
     </main>
 
-    <script>
-      window.onload = () => {
-        const logContainer = document.getElementById("logContainer");
-        logContainer.scrollTop = logContainer.scrollHeight;
-      }
-    </script>
+    <script src="{{ url_for('static', path='/js/logs.js') }}?v=0.1.0"></script>
   </body>
 </html>
