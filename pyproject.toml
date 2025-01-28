@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gallery-dl-server"
-version = "0.7.0-dev.2"
+version = "0.7.0-dev.3"
 requires-python = ">=3.10"
 description = "Web UI for downloading media with gallery-dl and yt-dlp."
 readme = "README.md"
@@ -98,6 +98,7 @@ gallery-dl-server = "gallery_dl_server.__main__:main"
 
 [tool.setuptools]
 packages = ["gallery_dl_server"]
+include-package-data = true
 
 [tool.ruff]
 line-length = 100
