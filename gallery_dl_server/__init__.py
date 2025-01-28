@@ -289,7 +289,7 @@ routes = [
     Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
     Route("/stream/logs", endpoint=log_stream, methods=["GET"]),
     WebSocketRoute("/ws/logs", endpoint=log_update),
-    Mount("/icons", app=StaticFiles(directory=utils.resource_path("icons")), name="icons"),
+    Mount("/static", app=StaticFiles(directory=utils.resource_path("static")), name="static"),
 ]
 
 app = Starlette(debug=True, routes=routes, lifespan=lifespan)

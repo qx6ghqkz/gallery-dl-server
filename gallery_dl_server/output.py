@@ -15,7 +15,7 @@ from gallery_dl import output, job
 from . import utils
 
 
-LOG_FILE = os.path.join(utils.dirname_parent(__file__), "logs", "app.log")
+LOG_FILE = utils.get_log_file_path("app.log")
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s [%(name)s] [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s"

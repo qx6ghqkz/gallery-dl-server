@@ -6,7 +6,7 @@
 
 Web UI for [`gallery-dl`](https://github.com/mikf/gallery-dl) with support for downloading videos via [`yt-dlp`](https://github.com/yt-dlp/yt-dlp).
 
-![screenshot](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/images/gallery-dl-server.png)
+![screenshot](https://raw.githubusercontent.com/qx6ghqkz/gallery-dl-server/refs/heads/main/images/gallery-dl-server.png)
 
 ## Running
 

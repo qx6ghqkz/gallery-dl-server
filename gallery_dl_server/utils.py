@@ -2,12 +2,13 @@
 
 import os
 import sys
+import importlib
 
 WINDOWS = os.name == "nt"
 DOCKER = os.path.isfile("/.dockerenv")
 KUBERNETES = os.environ.get("KUBERNETES_SERVICE_HOST") is not None
 EXECUTABLE = bool(getattr(sys, "frozen", False))
-MEIPASS_PATH = getattr(sys, "_MEIPASS", None)
+MEIPASS_PATH: str | None = getattr(sys, "_MEIPASS", None)
 
 CONTAINER = DOCKER or KUBERNETES
 MEIPASS = MEIPASS_PATH is not None
@@ -18,9 +19,27 @@ def resource_path(relative_path: str):
     """Return absolute path to resource for frozen PyInstaller executable."""
     if PYINSTALLER:
         assert MEIPASS_PATH
-        return os.path.join(MEIPASS_PATH, relative_path)
+        return os.path.join(MEIPASS_PATH, get_package_name(), relative_path)
     else:
-        return relative_path
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+
+
+def get_log_file_path(filename: str):
+    """Get log file path depending on whether the package is installed."""
+    try:
+        importlib.import_module(get_package_name())
+
+        if os.getcwd() == dirname_parent(os.path.abspath(__file__)):
+            raise ImportError
+
+        log_dir = os.path.expanduser("~")
+        filename = "gallery-dl-server.log"
+    except ImportError:
+        log_dir = os.path.join(os.getcwd(), "logs")
+
+    log_path = os.path.join(log_dir, filename)
+
+    return log_path
 
 
 def dirname_parent(path: str):
