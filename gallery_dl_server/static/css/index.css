@@ -1,0 +1,77 @@
+body {
+  background-color: #43045a;
+}
+
+h1, a {
+  white-space: nowrap;
+}
+
+#success-alert {
+  color: #bb00ff;
+}
+
+body a:not(header a, #success-alert) {
+  color: white;
+  transition: color 0.2s ease;
+}
+
+body a:not(header a, #success-alert):hover {
+  color: #bb00ff;
+}
+
+div.input-group > input,
+div.input-group > select.form-select {
+  outline: none;
+  transition: border 0.2s linear, box-shadow 0.2s linear;
+}
+
+div.input-group > input:focus,
+div.input-group > select.form-select:focus {
+  border: 1px solid #bb00ff;
+  box-shadow: 0 0 5px #bb00ff;
+}
+
+div.input-group > select.form-select {
+  flex: 0.1 1 100px;
+  max-width: 30%;
+  text-overflow: ellipsis;
+}
+
+select optgroup{
+  font-style: normal;
+}
+
+#box {
+  resize: vertical;
+  overflow-y: auto;
+  min-height: 20.81vh;
+  max-height: 88.80vh;
+  height: 26.62vh;
+  width: 90%;
+  color: #dedad6;
+  background-color: #181a1b;
+  border: 1px solid #333333;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 16px;
+  scrollbar-color: #454a4d #202324;
+}
+
+textarea {
+  outline: none;
+  transition: border 0.2s linear, box-shadow 0.2s linear;
+}
+
+textarea:focus {
+  border: 1px solid #bb00ff;
+  box-shadow: 0 0 5px #bb00ff;
+}
+
+footer {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  line-height: 1.2;
+}
