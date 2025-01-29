@@ -216,7 +216,6 @@ async def log_update(websocket: WebSocket):
 async def lifespan(app: Starlette):
     uvicorn_log = output.configure_uvicorn_logs()
     uvicorn_log.info(f"Starting {type(app).__name__} application.")
-
     await shutdown_override()
     try:
         yield
@@ -235,15 +234,19 @@ async def lifespan(app: Starlette):
 
 async def shutdown_override():
     """Override uvicorn exit handler to ensure a graceful shutdown."""
-    default_handler = signal.getsignal(signal.SIGINT)
+    sigint_handler = signal.getsignal(signal.SIGINT)
+    sigterm_handler = signal.getsignal(signal.SIGTERM)
 
     def shutdown(sig: int, frame: FrameType | None = None):
         shutdown_handler()
 
-        if callable(default_handler):
-            default_handler(sig, frame)
+        if sig == signal.SIGINT and callable(sigint_handler):
+            sigint_handler(sig, frame)
+        elif sig == signal.SIGTERM and callable(sigterm_handler):
+            sigterm_handler(sig, frame)
 
     signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
 
 
 def shutdown_handler():
