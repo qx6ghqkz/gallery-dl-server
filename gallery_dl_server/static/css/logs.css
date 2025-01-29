@@ -1,0 +1,27 @@
+body {
+  background-color: #121212;
+}
+
+main {
+  font-family: Arial , sans-serif;
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+main h1 {
+  color: white;
+}
+
+main a {
+  margin-left: 0.2rem;
+}
+
+pre {
+  background-color: #1e1e1e;
+  padding: 10px;
+  border: 1px solid #444;
+  overflow: auto;
+  scrollbar-color: #454a4d #202324;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
