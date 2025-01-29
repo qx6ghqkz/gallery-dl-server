@@ -2,7 +2,9 @@
 
 import os
 import sys
-import importlib
+
+from importlib import metadata
+
 
 WINDOWS = os.name == "nt"
 DOCKER = os.path.isfile("/.dockerenv")
@@ -26,15 +28,13 @@ def resource_path(relative_path: str):
 
 def get_log_file_path(filename: str):
     """Get log file path depending on whether the package is installed."""
-    try:
-        importlib.import_module(get_package_name())
+    log_dir = os.path.expanduser("~")
 
-        if os.getcwd() == dirname_parent(os.path.abspath(__file__)):
-            raise ImportError
+    installed_name = "gallery-dl-server"
 
-        log_dir = os.path.expanduser("~")
-        filename = "gallery-dl-server.log"
-    except ImportError:
+    if is_package_installed(installed_name):
+        filename = installed_name + ".log"
+    else:
         log_dir = os.path.join(os.getcwd(), "logs")
 
     log_path = os.path.join(log_dir, filename)
@@ -56,6 +56,19 @@ def get_package_name():
     """Return the name of the package."""
     fallback = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
     return __package__ if __package__ else fallback
+
+
+def is_package(package_name: str):
+    """Check if the package exists in the current working directory."""
+    path = os.path.join(os.getcwd(), package_name)
+    return os.path.isdir(path) and os.path.isfile(os.path.join(path, "__init__.py"))
+
+
+def is_package_installed(installed_name: str):
+    """Check if the package is installed in the current environment and not
+    in the current working directory."""
+    installed = {dist.metadata["Name"] for dist in metadata.distributions()}
+    return installed_name in installed if not is_package(get_package_name()) else False
 
 
 def normalise_path(path: str):
