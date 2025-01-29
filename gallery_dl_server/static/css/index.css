@@ -1,5 +1,5 @@
 body {
-  background-color: #43045a;
+  background-color: #4a045a;
 }
 
 h1, a {
@@ -7,7 +7,7 @@ h1, a {
 }
 
 #success-alert {
-  color: #bb00ff;
+  color: #d000ff;
 }
 
 body a:not(header a, #success-alert) {
@@ -16,7 +16,7 @@ body a:not(header a, #success-alert) {
 }
 
 body a:not(header a, #success-alert):hover {
-  color: #bb00ff;
+  color: #d000ff;
 }
 
 div.input-group > input,
@@ -27,8 +27,8 @@ div.input-group > select.form-select {
 
 div.input-group > input:focus,
 div.input-group > select.form-select:focus {
-  border: 1px solid #bb00ff;
-  box-shadow: 0 0 5px #bb00ff;
+  border: 1px solid #d000ff;
+  box-shadow: 0 0 5px #d000ff;
 }
 
 div.input-group > select.form-select {
@@ -66,8 +66,8 @@ textarea {
 }
 
 textarea:focus {
-  border: 1px solid #bb00ff;
-  box-shadow: 0 0 5px #bb00ff;
+  border: 1px solid #d000ff;
+  box-shadow: 0 0 5px #d000ff;
 }
 
 footer {

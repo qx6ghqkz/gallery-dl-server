@@ -1,6 +1,6 @@
 header {
-  color: #bb00ff;
-  background-color: #310342;
+  color: #d000ff;
+  background-color: #360342;
   white-space: nowrap;
 }
 
@@ -15,7 +15,7 @@ header a {
 }
 
 header a:hover {
-  color: #bb00ff;
+  color: #d000ff;
   text-decoration: underline;
   transform: translateY(-1px);
 }
@@ -37,7 +37,7 @@ header a:hover {
 }
 
 #home:hover {
-  color:#bb00ff;
+  color:#d000ff;
   text-decoration: none;
   transform: none;
 }
@@ -50,6 +50,6 @@ header a:hover {
 }
 
 .btn-custom:hover {
-  border-color: #8300b3;
-  background-color: #8300b3;
+  border-color: #9200b3;
+  background-color: #9200b3;
 }

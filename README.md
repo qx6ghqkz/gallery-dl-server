@@ -73,9 +73,9 @@ To view the full list of command-line arguments, perform `python3 -m gallery_dl_
 
 ### Installation
 
-The package can be installed along with its dependencies by performing `pip install .` in the root directory of the repository. To install optional dependencies, perform `pip install .[full]`. It is recommended to install in a virtual environment to avoid dependency conflicts.
+The package can be installed with Python along with its dependencies by performing `pip install .` in the root directory of the repository. To install optional dependencies, perform `pip install .[full]`. It is recommended to install in a virtual environment to avoid dependency conflicts.
 
-Installation will allow running directly from the command line via the command `gallery-dl-server`.
+Installation will allow running directly from the command line via the command `gallery-dl-server`. The log file will be created directly in the home directory of the user as long as the package is not in the current working directory.
 
 ### Standalone Executable
 
@@ -86,6 +86,8 @@ By default, any available port will be selected. To select a specific port, run 
 ```cmd
 gallery-dl-server.exe --host "0.0.0.0" --port "9080"
 ```
+
+When run as an executable, the log file will be created in a `logs` folder in the same directory as the executable. Configuration files can also be loaded from the same directory as the executable. The bundled releases contain a default configuration file in JSON, YAML and TOML formats.
 
 ### Dependencies
 
