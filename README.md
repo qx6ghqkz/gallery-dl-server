@@ -158,11 +158,9 @@ To view the full list of command-line arguments, perform `python3 -m gallery_dl_
 
 #### Installation
 
-The package and its dependencies can be installed with Python by performing `pip install gallery-dl-server`. To also install optional dependencies, perform `pip install gallery-dl-server[full]`.
+The package and its dependencies can be installed with Python by performing `pip install gallery-dl-server`. To also install optional dependencies, perform `pip install gallery-dl-server[full]`. It is recommended to use a virtual environment to avoid dependency conflicts.
 
 The package can be installed directly from the source code by performing `pip install .` in the root directory of the cloned repository. Perform `pip install .[full]` to install optional dependencies.
-
-It is recommended to use a virtual environment to avoid any dependency conflicts that may arise.
 
 Installation allows running directly from the command line via the command `gallery-dl-server`. To view the list of command-line options, perform `gallery-dl-server -h` for help.
 
@@ -261,7 +259,7 @@ fetch(`http://${host}:9080/gallery-dl/q`, {
 The following bookmarklet can be used from the bookmarks bar to send the current page URL to the gallery-dl-server instance running on a particular host.
 
 ```javascript
-javascript:!function(){fetch("http://${host}:9080/gallery-dl/q",{body:new URLSearchParams({url:window.location.href}),method:"POST"})}();
+javascript:(function(){var url="http://${host}:9080/gallery-dl/q",newTab=window.open(url,"_blank"),f=newTab.document.createElement("form");f.action=url;f.method="POST";var i=newTab.document.createElement("input");i.name="url";i.type="hidden";i.value=window.location.href;f.appendChild(i);newTab.document.body.appendChild(f);f.submit();})();
 ```
 
 ## Implementation

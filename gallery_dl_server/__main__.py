@@ -13,7 +13,7 @@ log = output.initialise_logging(__name__)
 def main():
     multiprocessing.freeze_support()
 
-    args = options.parse_args()
+    args = options.parse_args(__name__)
 
     opts = {
         "app": app,

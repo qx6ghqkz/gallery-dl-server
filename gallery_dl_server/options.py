@@ -4,10 +4,16 @@ import os
 
 from argparse import ArgumentParser, Namespace
 
+from . import utils
 
-def parse_args():
+
+def parse_args(module_name: str):
     """Parse command-line arguments and return namespace with the correct types."""
-    parser = ArgumentParser(description="Run gallery-dl-server with custom options.")
+    prog_name = utils.get_package_name() if module_name == "__main__" else None
+
+    parser = ArgumentParser(
+        prog=prog_name, description="Run gallery-dl-server with custom options."
+    )
 
     parser.add_argument(
         "--host",
