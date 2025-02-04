@@ -1,7 +1,7 @@
 let isPageAlive = true;
 
 window.addEventListener("beforeunload", () => {
-    isPageAlive = false;
+  isPageAlive = false;
 });
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -122,12 +122,12 @@ function connectWebSocket(box) {
   ws = new WebSocket(url);
 
   ws.onopen = function(event) {
-      console.log("WebSocket connection established.");
-      isConnected = true;
+    console.log("WebSocket connection established.");
+    isConnected = true;
   };
 
   ws.onmessage = function(event) {
-    box.textContent += event.data;
+    box.textContent = event.data;
     box.scrollTop = box.scrollHeight;
   };
 
@@ -136,17 +136,17 @@ function connectWebSocket(box) {
   };
 
   ws.onclose = function(event) {
-      if (isConnected) {
-        isConnected = false
+    if (isConnected) {
+      isConnected = false
 
-        if (isPageAlive) {
-          console.log("WebSocket connection closed. Attempting to reconnect...");
-        }
-
-        setTimeout(() => connectWebSocket(box), 1000);
-      } else {
-        console.log("WebSocket connection could not be established.")
+      if (isPageAlive) {
+        console.log("WebSocket connection closed. Attempting to reconnect...");
       }
+
+      setTimeout(() => connectWebSocket(box), 1000);
+    } else {
+      console.log("WebSocket connection could not be established.")
+    }
   };
 }
 
