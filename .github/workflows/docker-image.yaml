@@ -25,6 +25,17 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      - name: Create pip cache directory
+        run: mkdir -p /home/runner/.cache/pip
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -60,7 +71,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          build-contexts: |
+            pip_cache_dir=/home/runner/.cache/pip
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

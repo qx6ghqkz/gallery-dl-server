@@ -211,15 +211,18 @@ def stderr_write(s: str, /):
 
 def redirect_standard_streams(stdout=True, stderr=True):
     """Redirect stdout and stderr to a logger or suppress them."""
+    logger_writer = LoggerWriter()
+    null_writer = NullWriter()
+
     if stdout:
-        setattr(sys, "stdout", LoggerWriter(level=logging.INFO))
+        setattr(sys, "stdout", logger_writer)
     else:
-        setattr(sys, "stdout", NullWriter())
+        setattr(sys, "stdout", null_writer)
 
     if stderr:
-        setattr(sys, "stderr", LoggerWriter(level=logging.DEBUG))
+        setattr(sys, "stderr", logger_writer)
     else:
-        setattr(sys, "stderr", NullWriter())
+        setattr(sys, "stderr", null_writer)
 
 
 class LoggerWriter:
@@ -229,10 +232,18 @@ class LoggerWriter:
         self.level = level
         self.logger = initialise_logging(__name__)
 
+        self.logger.handlers.clear()
+
+        self.logger.addHandler(ConsoleProgress())
+        self.logger.addHandler(FileProgress())
+
     def write(self, msg: str):
         """Prepare and then log messages."""
         if not msg.strip():
             return
+
+        if msg.startswith("\r" + "* "):
+            msg = f"Download successful: {msg[3:]}"
 
         if msg.startswith("# "):
             msg = f"File already exists or its ID is in a download archive: {msg[2:]}"
@@ -242,6 +253,62 @@ class LoggerWriter:
 
     def flush(self):
         pass
+
+
+class ConsoleProgress(logging.Handler):
+    """Format messages and write to stdout on the same line."""
+
+    def __init__(self):
+        super().__init__()
+        self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        self.last_msg = ""
+
+    def emit(self, record):
+        msg = self.format(record).strip()
+
+        assert sys.__stdout__
+        stdout = sys.__stdout__
+
+        if "/s" in msg and "/s" in self.last_msg:
+            stdout.write("\033[A")
+
+        if len(msg) < len(self.last_msg):
+            msg = msg.ljust(len(self.last_msg))
+
+        stdout.write(msg + "\n")
+        stdout.flush()
+
+        self.last_msg = msg
+
+
+class FileProgress(logging.FileHandler):
+    """Custom FileHandler that overwrites the last line in the log file."""
+
+    def __init__(self, filename=LOG_FILE, mode="a", encoding="utf-8", delay=False):
+        super().__init__(filename, mode, encoding, delay)
+        self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        self.last_msg = ""
+
+    def emit(self, record):
+        """Override the emit method to handle overwriting the last line."""
+        msg = self.format(record).strip()
+
+        if "/s" in msg and "/s" in self.last_msg:
+            self.overwrite_last_line(msg)
+        else:
+            super().emit(record)
+
+        self.last_msg = msg
+
+    def overwrite_last_line(self, msg):
+        """Overwrite the last line of the log file with the new message."""
+        with open(self.baseFilename, "r+", encoding=self.encoding) as f:
+            lines = f.readlines()
+            lines[-1] = msg + "\n"
+
+            f.seek(0)
+            f.writelines(lines)
+            f.truncate()
 
 
 class NullWriter:

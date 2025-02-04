@@ -23,6 +23,7 @@ from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 import aiofiles
+import watchfiles
 import gallery_dl.version
 import yt_dlp.version
 
@@ -133,9 +134,9 @@ def download_task(url: str, options: dict[str, str]):
         exit_code = process.exitcode
 
     if exit_code == 0:
-        log.info("Download job completed with exit code: 0")
+        log.info("Download process exited successfully")
     else:
-        log.error("Download job failed with exit code: %s", exit_code)
+        log.error("Download failed with exit code: %s", exit_code)
 
 
 async def log_route(request: Request):
@@ -189,18 +190,13 @@ async def log_update(websocket: WebSocket):
         active_connections.add(websocket)
         log.debug("WebSocket added to active connections")
     try:
-        async with aiofiles.open(log_file, mode="r", encoding="utf-8") as file:
-            await file.seek(0, 2)
-            while not shutdown_event.is_set():
-                chunk = await file.read(64 * 1024)
-                if not chunk:
-                    try:
-                        await asyncio.sleep(1)
-                    except asyncio.CancelledError as e:
-                        log.debug(f"Exception: {type(e).__name__}")
-                        break
-                    continue
-                await websocket.send_text(chunk)
+        async for changes in watchfiles.awatch(log_file, stop_event=shutdown_event):
+            await asyncio.sleep(1)
+            async with aiofiles.open(log_file, mode="r", encoding="utf-8") as file:
+                content = await file.read()
+                await websocket.send_text(content)
+    except asyncio.CancelledError as e:
+        log.debug(f"Exception: {type(e).__name__}")
     except WebSocketDisconnect as e:
         log.debug(f"Exception: {type(e).__name__}")
     except Exception as e:

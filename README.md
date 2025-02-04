@@ -2,7 +2,7 @@
 
 [![GitHub Release](https://img.shields.io/github/v/release/qx6ghqkz/gallery-dl-server?logo=github&style=for-the-badge)](https://github.com/qx6ghqkz/gallery-dl-server/releases/latest "Latest Release")
 [![PyPI - Version](https://img.shields.io/pypi/v/gallery-dl-server?logo=pypi&style=for-the-badge)](https://pypi.org/project/gallery-dl-server "PyPI")
-[![Docker Image Version](https://img.shields.io/docker/v/qx6ghqkz/gallery-dl-server?logo=docker&label=Docker&style=for-the-badge)](https://hub.docker.com/r/qx6ghqkz/gallery-dl-server "Docker")
+[![Docker Image Version](https://img.shields.io/docker/v/qx6ghqkz/gallery-dl-server?logo=docker&label=Docker&sort=semver&style=for-the-badge)](https://hub.docker.com/r/qx6ghqkz/gallery-dl-server "Docker")
 [![Docker Pulls](https://img.shields.io/docker/pulls/qx6ghqkz/gallery-dl-server.svg?logo=docker&style=for-the-badge)](https://hub.docker.com/r/qx6ghqkz/gallery-dl-server/tags "Docker Tags")
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/qx6ghqkz/gallery-dl-server/docker-image.yaml?branch=main&style=for-the-badge)](https://github.com/qx6ghqkz/gallery-dl-server/actions "GitHub Actions")
 [![Commits](https://img.shields.io/github/commit-activity/m/qx6ghqkz/gallery-dl-server?label=Commits&style=for-the-badge)](https://github.com/qx6ghqkz/gallery-dl-server/commits/main/ "Commit History")
@@ -158,11 +158,9 @@ To view the full list of command-line arguments, perform `python3 -m gallery_dl_
 
 #### Installation
 
-The package and its dependencies can be installed with Python by performing `pip install gallery-dl-server`. To also install optional dependencies, perform `pip install gallery-dl-server[full]`.
+The package and its dependencies can be installed with Python by performing `pip install gallery-dl-server`. To also install optional dependencies, perform `pip install gallery-dl-server[full]`. It is recommended to use a virtual environment to avoid dependency conflicts.
 
 The package can be installed directly from the source code by performing `pip install .` in the root directory of the cloned repository. Perform `pip install .[full]` to install optional dependencies.
-
-It is recommended to use a virtual environment to avoid any dependency conflicts that may arise.
 
 Installation allows running directly from the command line via the command `gallery-dl-server`. To view the list of command-line options, perform `gallery-dl-server -h` for help.
 
@@ -261,7 +259,7 @@ fetch(`http://${host}:9080/gallery-dl/q`, {
 The following bookmarklet can be used from the bookmarks bar to send the current page URL to the gallery-dl-server instance running on a particular host.
 
 ```javascript
-javascript:!function(){fetch("http://${host}:9080/gallery-dl/q",{body:new URLSearchParams({url:window.location.href}),method:"POST"})}();
+javascript:(function(){var url="http://${host}:9080/gallery-dl/q",newTab=window.open(url,"_blank"),f=newTab.document.createElement("form");f.action=url;f.method="POST";var i=newTab.document.createElement("input");i.name="url";i.type="hidden";i.value=window.location.href;f.appendChild(i);newTab.document.body.appendChild(f);f.submit();})();
 ```
 
 ## Implementation
@@ -270,7 +268,7 @@ This service operates using the ASGI web server [`uvicorn`](https://github.com/e
 
 Downloads are handled by [`gallery-dl`](https://github.com/mikf/gallery-dl) in conjunction with [`yt-dlp`](https://github.com/yt-dlp/yt-dlp). The integration with gallery-dl uses Python as discussed in [this issue](https://github.com/mikf/gallery-dl/issues/642). For video downloads, gallery-dl imports and uses yt-dlp.
 
-The Docker image is based on [`python:alpine`](https://registry.hub.docker.com/_/python/), which in turn is based on [`alpine`](https://hub.docker.com/_/alpine/).
+The Docker image is based on [`python:3.12-alpine`](https://registry.hub.docker.com/_/python), which in turn is based on [`alpine`](https://hub.docker.com/_/alpine).
 
 ## Useful Links
 
