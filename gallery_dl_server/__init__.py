@@ -190,11 +190,27 @@ async def log_update(websocket: WebSocket):
         active_connections.add(websocket)
         log.debug("WebSocket added to active connections")
     try:
-        async for changes in watchfiles.awatch(log_file, stop_event=shutdown_event):
-            await asyncio.sleep(1)
-            async with aiofiles.open(log_file, mode="r", encoding="utf-8") as file:
-                content = await file.read()
-                await websocket.send_text(content)
+        async with aiofiles.open(log_file, mode="r", encoding="utf-8") as file:
+            await file.seek(0, os.SEEK_END)
+            last_position = await file.tell()
+            last_line = ""
+
+            async for changes in watchfiles.awatch(log_file, stop_event=shutdown_event):
+                await asyncio.sleep(1)
+                await file.seek(last_position)
+
+                new_content = ""
+                previous_line = await output.read_previous_line(log_file)
+                if previous_line and last_line:
+                    if "B/s" in previous_line and "B/s" in last_line:
+                        new_content = previous_line + "\n"
+
+                new_content += await file.read()
+                if new_content.strip():
+                    await websocket.send_text(new_content)
+
+                last_position = await file.tell()
+                last_line = previous_line
     except asyncio.CancelledError as e:
         log.debug(f"Exception: {type(e).__name__}")
     except WebSocketDisconnect as e:
@@ -252,6 +268,7 @@ def shutdown_handler():
         log.debug("Set shutdown event")
 
     asyncio.create_task(close_connections())
+    asyncio.create_task(output.close_handlers())
 
 
 async def close_connections():

@@ -15,7 +15,7 @@ def main():
 
     args = options.parse_args(__name__)
 
-    opts = {
+    kwargs = {
         "app": app,
         "host": args.host,
         "port": args.port,
@@ -23,7 +23,7 @@ def main():
         "access_log": args.access_log,
     }
 
-    config = uvicorn.Config(**opts)
+    config = uvicorn.Config(**kwargs)
     server = uvicorn.Server(config)
 
     try:

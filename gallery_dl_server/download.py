@@ -13,19 +13,16 @@ log = output.initialise_logging(__name__)
 
 def run(url: str, options: dict[str, str], log_queue: Queue, return_status: Queue):
     """Set gallery-dl configuration, set up logging and run download job."""
-    config.clear()
-
     config_files = [
         "/config/gallery-dl.conf",
         "/config/config.json",
     ]
 
+    config.clear()
     config.load(config_files)
 
     output.setup_logging()
-
     output.capture_logs(log_queue)
-
     output.redirect_standard_streams()
 
     log.info(f"Requested download with the following options: {options}")
@@ -47,6 +44,8 @@ def run(url: str, options: dict[str, str], log_queue: Queue, return_status: Queu
     except Exception as e:
         status = -1
         log.error(f"Exception: {type(e).__name__}: {e}")
+    except KeyboardInterrupt as e:
+        log.debug(f"Exception: {type(e).__name__}")
 
     return_status.put(status)
 

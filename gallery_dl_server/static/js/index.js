@@ -114,7 +114,7 @@ async function fetchLogs() {
   }
 }
 
-function connectWebSocket(box) {
+function connectWebSocket(box, allowReconnect = true) {
   const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
   const host = window.location.host;
   const url = `${protocol}${host}/ws/logs`;
@@ -127,8 +127,27 @@ function connectWebSocket(box) {
   };
 
   ws.onmessage = function(event) {
-    box.textContent = event.data;
-    box.scrollTop = box.scrollHeight;
+    const newLines = event.data.split("\n").map(line => line.trim()).filter(Boolean);
+    if (newLines.length === 0) return;
+
+    let progressUpdate = false;
+
+    const lines = box.textContent.split("\n").filter(Boolean);
+    const lastLine = lines.length > 0 ? lines[lines.length - 1] : null;
+
+    if (lastLine && lastLine.includes("B/s") && newLines[0].includes("B/s")) {
+      progressUpdate = true;
+
+      lines[lines.length - 1] = newLines[0];
+      lines.push(...newLines.slice(1));
+    } else {
+      lines.push(...newLines);
+    }
+    box.textContent = lines.join("\n") + "\n";
+
+    if (!progressUpdate) {
+      box.scrollTop = box.scrollHeight;
+    }
   };
 
   ws.onerror = function(event) {
@@ -139,11 +158,10 @@ function connectWebSocket(box) {
     if (isConnected) {
       isConnected = false
 
-      if (isPageAlive) {
+      if (isPageAlive && allowReconnect) {
         console.log("WebSocket connection closed. Attempting to reconnect...");
+        setTimeout(() => connectWebSocket(box, allowReconnect), 1000);
       }
-
-      setTimeout(() => connectWebSocket(box), 1000);
     } else {
       console.log("WebSocket connection could not be established.")
     }
