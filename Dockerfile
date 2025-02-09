@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 COPY requirements.txt .
 
-RUN --mount=type=cache,from=pip_cache_dir,target=/root/.cache/pip \
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     apk add --no-cache --virtual build-deps build-base cargo \
     && pip install --user -r requirements.txt \
     && apk del build-deps

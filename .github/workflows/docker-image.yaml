@@ -25,13 +25,12 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Create pip cache directory
-        run: mkdir -p /home/runner/.cache/pip
-
-      - name: Cache Python dependencies
+      - name: Cache build dependencies
+        id: cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.cache/pip
+          path: |
+            pip-cache-dir
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
@@ -67,12 +66,19 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Inject cache into Docker build
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          cache-map: |
+            {
+              "pip-cache-dir": "/root/.cache/pip"
+            }
+          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          build-contexts: |
-            pip_cache_dir=/home/runner/.cache/pip
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: ${{ steps.meta.outputs.tags }}
