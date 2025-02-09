@@ -9,6 +9,9 @@ import io
 
 from multiprocessing import Queue
 from typing import TextIO, Any
+from mmap import mmap
+
+import aiofiles
 
 from gallery_dl import output, job
 
@@ -79,6 +82,7 @@ def setup_stream_handler(stream: TextIO | Any, formatter: logging.Formatter):
     handler = logging.StreamHandler(stream)
     handler.setFormatter(formatter)
 
+    register_handler(handler)
     return handler
 
 
@@ -89,6 +93,7 @@ def setup_file_handler(file: str, formatter: logging.Formatter):
     handler = logging.FileHandler(file, mode="a", encoding="utf-8", delay=False)
     handler.setFormatter(formatter)
 
+    register_handler(handler)
     return handler
 
 
@@ -104,6 +109,7 @@ def get_blank_logger(name="blank", stream=sys.stdout, level=logging.INFO):
     if not logger.hasHandlers():
         handler = logging.StreamHandler(stream)
         logger.addHandler(handler)
+        register_handler(handler)
 
     logger.setLevel(level)
     logger.propagate = False
@@ -125,6 +131,7 @@ def setup_logging(level=LOG_LEVEL):
         ulog.addHandler(handler)
         ulog.propagate = False
 
+        register_handler(handler)
         setattr(job.Job, "ulog", ulog)
 
     return logger
@@ -141,9 +148,11 @@ def capture_logs(log_queue: Queue):
 
         for handler in root.handlers[:]:
             if isinstance(handler, logging.StreamHandler):
+                handler.close()
                 root.removeHandler(handler)
 
     root.addHandler(queue_handler)
+    register_handler(handler)
 
 
 class QueueHandler(logging.Handler):
@@ -230,12 +239,19 @@ class LoggerWriter:
 
     def __init__(self, level=logging.INFO):
         self.level = level
-        self.logger = initialise_logging(__name__)
+        self.logger = initialise_logging(type(self).__name__)
 
-        self.logger.handlers.clear()
+        for handler in self.logger.handlers[:]:
+            handler.close()
+            self.logger.removeHandler(handler)
 
-        self.logger.addHandler(ConsoleProgress())
-        self.logger.addHandler(FileProgress())
+        self.console_handler = ConsoleProgress(self.logger)
+        self.file_handler = FileProgress(self.logger)
+
+        self.logger.addHandler(self.console_handler)
+        self.logger.addHandler(self.file_handler)
+
+        register_handler(self.console_handler, self.file_handler)
 
     def write(self, msg: str):
         """Prepare and then log messages."""
@@ -256,24 +272,26 @@ class LoggerWriter:
 
 
 class ConsoleProgress(logging.Handler):
-    """Format messages and write to stdout on the same line."""
+    """Custom handler for writing progress messages to the console."""
 
-    def __init__(self):
+    def __init__(self, logger: logging.Logger):
         super().__init__()
+        self.logger = logger
         self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
         self.last_msg = ""
 
     def emit(self, record):
+        """Write progress updates to stdout on the same line."""
         msg = self.format(record).strip()
 
         assert sys.__stdout__
         stdout = sys.__stdout__
 
-        if "/s" in msg and "/s" in self.last_msg:
+        if "B/s" in msg and "B/s" in self.last_msg:
             stdout.write("\033[A")
 
-        if len(msg) < len(self.last_msg):
-            msg = msg.ljust(len(self.last_msg))
+            if len(msg) < len(self.last_msg):
+                msg = msg.ljust(len(self.last_msg))
 
         stdout.write(msg + "\n")
         stdout.flush()
@@ -282,33 +300,87 @@ class ConsoleProgress(logging.Handler):
 
 
 class FileProgress(logging.FileHandler):
-    """Custom FileHandler that overwrites the last line in the log file."""
+    """Custom FileHandler that handles progress updates."""
 
-    def __init__(self, filename=LOG_FILE, mode="a", encoding="utf-8", delay=False):
-        super().__init__(filename, mode, encoding, delay)
+    def __init__(self, logger: logging.Logger):
+        super().__init__(filename=LOG_FILE, mode="a", encoding="utf-8", delay=False)
+        self.logger = logger
         self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
         self.last_msg = ""
 
     def emit(self, record):
-        """Override the emit method to handle overwriting the last line."""
+        """Override the emit method to handle progress updates."""
         msg = self.format(record).strip()
 
-        if "/s" in msg and "/s" in self.last_msg:
-            self.overwrite_last_line(msg)
+        if "B/s" in msg and "B/s" in self.last_msg:
+            self.update_progress(msg)
         else:
             super().emit(record)
 
         self.last_msg = msg
 
-    def overwrite_last_line(self, msg):
-        """Overwrite the last line of the log file with the new message."""
-        with open(self.baseFilename, "r+", encoding=self.encoding) as f:
-            lines = f.readlines()
-            lines[-1] = msg + "\n"
+    def update_progress(self, msg: str):
+        """Write download progress to the log file on the same line."""
+        mmapped_file = None
+        try:
+            with open(self.baseFilename, "r+b") as f:
+                mmapped_file = mmap(f.fileno(), 0)
+                self.overwrite_last_line(mmapped_file, msg)
+        except Exception as e:
+            self.logger.debug(f"Exception: {type(e).__name__}: {e}")
+        finally:
+            if mmapped_file:
+                mmapped_file.close()
 
-            f.seek(0)
-            f.writelines(lines)
-            f.truncate()
+    def overwrite_last_line(self, mmapped_file: mmap, msg: str):
+        """Overwrite the last line of a memory-mapped file with the given message."""
+        last_newline_pos = mmapped_file.rfind(b"\n")
+        second_last_newline_pos = mmapped_file.rfind(b"\n", 0, last_newline_pos)
+
+        mmapped_file.seek(second_last_newline_pos + 1)
+
+        new_msg = msg.encode("utf-8") + b"\n"
+        new_msg_length = len(new_msg)
+
+        current_pos = mmapped_file.tell()
+        new_file_size = current_pos + new_msg_length
+
+        if new_file_size > mmapped_file.size():
+            mmapped_file.resize(new_file_size)
+
+        mmapped_file.write(new_msg)
+        mmapped_file.flush()
+
+        mmapped_file.resize(new_file_size)
+
+
+async def read_previous_line(file_path: str):
+    """Return the previous line of a file."""
+    async with aiofiles.open(file_path, "rb") as file:
+        await file.seek(0, os.SEEK_END)
+        position = await file.tell()
+
+        if position == 0:
+            return None
+
+        last_line_found = False
+        previous_line = b""
+
+        while position > 0:
+            await file.seek(position - 1)
+            char = await file.read(1)
+            if char == b"\n":
+                if last_line_found:
+                    previous_line = await file.readline()
+                    break
+                else:
+                    last_line_found = True
+            position -= 1
+
+        if previous_line:
+            return previous_line.decode("utf-8").rstrip()
+        else:
+            return None
 
 
 class NullWriter:
@@ -333,13 +405,13 @@ class StringLogger:
         self.root.addHandler(self.handler)
 
     def get_logs(self):
-        """Return logs captured by StringHandler."""
+        """Return logs captured by the handler."""
         return self.handler.get_logs()
 
     def close(self):
-        """Remove StringHandler from the root logger and close buffer."""
-        self.root.removeHandler(self.handler)
+        """Close and remove the handler from the root logger."""
         self.handler.close()
+        self.root.removeHandler(self.handler)
 
 
 class StringHandler(logging.Handler):
@@ -357,13 +429,14 @@ class StringHandler(logging.Handler):
             self.buffer.write(msg.strip() + self.terminator)
 
     def get_logs(self):
-        """Retrieve logs from the string object."""
+        """Retrieve logs from the buffer."""
         logs = self.buffer.getvalue()
         return logs.rstrip(self.terminator)
 
     def close(self):
-        super().close()
+        """Close the log buffer and handler."""
         self.buffer.close()
+        super().close()
 
 
 def last_line(message: str, string: str, case_sensitive=True):
@@ -407,3 +480,77 @@ class Filter(logging.Filter):
             or "connection open" in record.getMessage()
             or "connection closed" in record.getMessage()
         )
+
+
+def register_handler(*handlers: logging.Handler):
+    """Add handler to the logging manager."""
+    logging_manager = LoggingManager()
+
+    for handler in handlers:
+        logging_manager.add_handler(handler)
+
+
+async def close_handlers():
+    """Close all registered logging handlers."""
+    logging_manager = LoggingManager()
+    logging_manager.close_all()
+
+
+class LoggingManager:
+    """Store logging handler instances for closure."""
+
+    _instance: "LoggingManager | None" = None
+    logger: "BasicLogger"
+
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super(LoggingManager, cls).__new__(cls)
+            cls._instance.logger = BasicLogger()
+            cls._instance.logger.debug("Created new instance of LoggingManager.")
+
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, "handlers"):
+            self.handlers: list[logging.Handler] = []
+            self.logger.debug("Initialized handlers list.")
+
+    def add_handler(self, handler: logging.Handler):
+        """Add handler to list of handlers."""
+        self.handlers.append(handler)
+        self.logger.debug(f"Added handler: {handler}")
+
+    def close_all(self):
+        """Close all logging handlers and clear the list."""
+        for handler in self.handlers[:]:
+            handler.close()
+            self.logger.debug(f"Closed handler: {handler}")
+
+        self.handlers.clear()
+        self.logger.debug("Cleared handlers list.")
+        self.logger.close()
+
+
+class BasicLogger(logging.Logger):
+    """Basic logger for debugging."""
+
+    def __init__(self):
+        super().__init__(name=type(self).__name__, level=LOG_LEVEL)
+        self.addHandler(BasicHandler())
+
+    def close(self):
+        """Close and remove all handlers from the logger."""
+        for handler in self.handlers[:]:
+            handler.close()
+            self.removeHandler(handler)
+
+
+class BasicHandler(logging.Handler):
+    """Basic handler for debugging."""
+
+    def __init__(self):
+        super().__init__()
+        self.formatter = Formatter(LOG_FORMAT_DEBUG, LOG_FORMAT_DATE)
+
+    def emit(self, record):
+        sys.stdout.write(self.format(record) + "\n")
