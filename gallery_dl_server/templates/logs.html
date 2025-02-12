@@ -84,14 +84,16 @@
         </div>
 
         <div>
+          <button id="clear-logs" class="btn btn-custom">Clear logs</button>
+
           <a class="btn btn-custom" href="/stream/logs">View plain text</a>
           <a class="btn btn-custom" href="/stream/logs" download="gallery-dl-server.log" >Download</a>
         </div>
       </div>
 
-      <pre id="logContainer" class="h-100 m-3">{{ logs }}</pre>
+      <pre id="container-logs" class="h-100 m-3">{{ logs }}</pre>
     </main>
 
-    <script src="/static/js/logs.js?v=0.1.0"></script>
+    <script src="/static/js/logs.js?v=0.1.1"></script>
   </body>
 </html>
