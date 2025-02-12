@@ -18,7 +18,12 @@ from starlette.responses import RedirectResponse, JSONResponse, StreamingRespons
 from starlette.requests import Request
 from starlette.routing import Route, WebSocketRoute, Mount
 from starlette.staticfiles import StaticFiles
-from starlette.status import HTTP_303_SEE_OTHER
+from starlette.status import (
+    HTTP_200_OK,
+    HTTP_303_SEE_OTHER,
+    HTTP_404_NOT_FOUND,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+)
 from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
@@ -147,7 +152,7 @@ async def log_route(request: Request):
                 async for line in file:
                     log_contents += line
         except FileNotFoundError:
-            return "Log file does not exist."
+            return "Log file not found."
         except Exception as e:
             log.debug(f"Exception: {type(e).__name__}: {e}")
             return f"An error occurred: {e}"
@@ -159,6 +164,32 @@ async def log_route(request: Request):
     return templates.TemplateResponse(
         "logs.html", {"request": request, "app_version": version.__version__, "logs": logs}
     )
+
+
+async def clear_logs(request: Request):
+    try:
+        with open(log_file, "w") as file:
+            file.write("")
+        return JSONResponse(
+            {"success": True, "message": "Logs successfully cleared."},
+            status_code=HTTP_200_OK,
+        )
+    except FileNotFoundError:
+        return JSONResponse(
+            {"success": False, "error": "Log file not found."},
+            status_code=HTTP_404_NOT_FOUND,
+        )
+    except IOError:
+        return JSONResponse(
+            {"success": False, "error": "An error occurred while accessing the log file."},
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    except Exception as e:
+        log.debug(f"Exception: {type(e).__name__}: {e}")
+        return JSONResponse(
+            {"success": False, "error": str(e)},
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 async def log_stream(request: Request):
@@ -174,7 +205,7 @@ async def log_stream(request: Request):
                     else:
                         yield chunk
         except FileNotFoundError:
-            yield "Log file does not exist."
+            yield "Log file not found."
         except Exception as e:
             log.debug(f"Exception: {type(e).__name__}: {e}")
             yield f"An error occurred: {type(e).__name__}: {e}"
@@ -303,6 +334,7 @@ routes = [
     Route("/gallery-dl", endpoint=homepage, methods=["GET"]),
     Route("/gallery-dl/q", endpoint=submit_form, methods=["POST"]),
     Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
+    Route("/gallery-dl/logs/clear", endpoint=clear_logs, methods=["POST"]),
     Route("/stream/logs", endpoint=log_stream, methods=["GET"]),
     WebSocketRoute("/ws/logs", endpoint=log_update),
     Mount("/static", app=StaticFiles(directory=utils.resource_path("static")), name="static"),
