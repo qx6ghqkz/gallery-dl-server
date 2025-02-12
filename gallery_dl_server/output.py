@@ -340,18 +340,11 @@ class FileProgress(logging.FileHandler):
         mmapped_file.seek(second_last_newline_pos + 1)
 
         new_msg = msg.encode("utf-8") + b"\n"
-        new_msg_length = len(new_msg)
+        new_size = mmapped_file.tell() + len(new_msg)
 
-        current_pos = mmapped_file.tell()
-        new_file_size = current_pos + new_msg_length
-
-        if new_file_size > mmapped_file.size():
-            mmapped_file.resize(new_file_size)
-
+        mmapped_file.resize(new_size)
         mmapped_file.write(new_msg)
         mmapped_file.flush()
-
-        mmapped_file.resize(new_file_size)
 
 
 async def read_previous_line(file_path: str):
