@@ -1,0 +1,48 @@
+div.input-group > input,
+div.input-group > input::placeholder,
+div.input-group > select.form-select {
+  background-color: #181a1b;
+  border-color: #333333;
+  color: #afafaf;
+}
+
+div.input-group > input:focus,
+div.input-group > select.form-select:focus {
+  background-color: #181a1b;
+  border-color: #9200b3;
+  box-shadow: 0 0 5px #d000ff;
+  color: #afafaf;
+}
+
+#button-submit {
+  background-color: #181a1b;
+  border-color: #333333;
+  color: #afafaf;
+}
+
+#button-submit:hover {
+  background-color: #9200b3;
+  border-color: #9200b3;
+  color: #ffffff;
+}
+
+.swal2-popup {
+  background-color: #181a1b !important;
+  color: #afafaf !important;
+}
+
+.swal2-success > div:not(.swal2-success-ring) {
+  background-color: #181a1b !important;
+}
+
+.swal2-success-ring {
+  border-color: #9200b3 !important;
+}
+
+.swal2-success > span {
+  background-color: #9200b3 !important;
+}
+
+.swal2-timer-progress-bar {
+  background-color: #9200b3 !important;
+}

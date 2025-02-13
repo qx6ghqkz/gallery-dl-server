@@ -31,7 +31,9 @@ const Success = Swal.mixin({
 if (added) {
   Success.fire({
     title: "Success!",
-    html: "Added <a id='success-alert' href=" + added + ">one item</a> to the download queue.",
+    html: `Added
+      <a id="success-alert" href="${added}" target="_blank" rel="noopener noreferrer">one item</a>
+      to the download queue.`,
   });
 }
 
@@ -223,4 +225,31 @@ window.onbeforeunload = function(event) {
   if (localStorage.getItem("logs") == "shown") {
     saveBox();
   }
+}
+
+const darkModeStyle = document.getElementById("dark-mode");
+const darkModeToggle = document.getElementById("dark-mode-toggle");
+
+if (localStorage.getItem("theme") === "dark") {
+  enableDarkMode();
+}
+
+darkModeToggle.onclick = () => {
+  if (darkModeStyle.disabled) {
+    enableDarkMode();
+    localStorage.setItem("theme", "dark");
+  } else {
+    disableDarkMode();
+    localStorage.setItem("theme", "light");
+  }
+}
+
+function enableDarkMode() {
+  darkModeStyle.disabled = false;
+  darkModeToggle.innerHTML = `<i class="bi bi-sun-fill"></i>`;
+}
+
+function disableDarkMode() {
+  darkModeStyle.disabled = true;
+  darkModeToggle.innerHTML = `<i class="bi bi-moon-fill"></i>`;
 }

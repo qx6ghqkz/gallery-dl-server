@@ -75,8 +75,12 @@ select optgroup{
   box-shadow: 0 0 5px #d000ff;
 }
 
-footer {
+footer > div {
   color: rgba(255, 255, 255, 0.6);
   font-size: 16px;
   line-height: 1.2;
+}
+
+footer > button.btn-custom {
+  border: none;
 }
