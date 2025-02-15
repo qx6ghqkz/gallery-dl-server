@@ -10,7 +10,6 @@ from gallery_dl import config
 
 from . import output, utils
 
-
 log = output.initialise_logging(__name__)
 
 _config: dict[str, Any] = config._config

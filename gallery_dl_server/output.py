@@ -7,19 +7,32 @@ import re
 import pickle
 import io
 
+from mmap import mmap
 from multiprocessing import Queue
 from typing import TextIO, Any
-from mmap import mmap
 
 import aiofiles
 
 from gallery_dl import output, job
 
-from . import utils
+from . import options, utils
 
+args = options.custom_args
 
-LOG_FILE = utils.get_log_file_path("app.log")
-LOG_LEVEL = logging.INFO
+if args is not None:
+    log_dir = args.log_dir
+    log_level = args.log_level.upper()
+    access_log = args.access_log
+
+    if args.log_level.lower() == "trace":
+        log_level = "DEBUG"
+else:
+    log_dir = os.path.expanduser("~")
+    log_level = "INFO"
+    access_log = False
+
+LOG_FILE = utils.get_log_file_path(log_dir, "app.log")
+LOG_LEVEL: int = getattr(logging, log_level, logging.INFO)
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s [%(name)s] [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s"
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
@@ -458,14 +471,14 @@ def configure_uvicorn_logs():
     main = logging.getLogger("uvicorn")
     error = logging.getLogger("uvicorn.error")
 
-    if LOG_LEVEL > logging.DEBUG:
-        error.addFilter(Filter())
+    if not access_log:
+        error.addFilter(WebSocketFilter())
 
     return main
 
 
-class Filter(logging.Filter):
-    """Filter out specific log messages."""
+class WebSocketFilter(logging.Filter):
+    """Filter out WebSocket connection logs."""
 
     def filter(self, record):
         return not (

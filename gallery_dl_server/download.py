@@ -7,7 +7,6 @@ from gallery_dl import job, exception
 
 from . import config, output
 
-
 log = output.initialise_logging(__name__)
 
 

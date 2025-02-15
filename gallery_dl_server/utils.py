@@ -5,12 +5,12 @@ import sys
 
 from importlib import metadata
 
-
 WINDOWS = os.name == "nt"
 DOCKER = os.path.isfile("/.dockerenv")
 KUBERNETES = os.environ.get("KUBERNETES_SERVICE_HOST") is not None
 EXECUTABLE = bool(getattr(sys, "frozen", False))
 MEIPASS_PATH: str | None = getattr(sys, "_MEIPASS", None)
+PYTHON_VERSION = sys.version_info
 
 CONTAINER = DOCKER or KUBERNETES
 MEIPASS = MEIPASS_PATH is not None
@@ -26,10 +26,8 @@ def resource_path(relative_path: str):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 
-def get_log_file_path(filename: str):
+def get_log_file_path(log_dir: str, filename: str):
     """Get log file path depending on whether the package is installed."""
-    log_dir = os.path.expanduser("~")
-
     installed_name = "gallery-dl-server"
 
     if is_package_installed(installed_name):
