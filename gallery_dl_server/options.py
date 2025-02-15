@@ -6,9 +6,15 @@ from argparse import ArgumentParser, Namespace
 
 from . import utils
 
+custom_args: "CustomNamespace | None" = None
 
-def parse_args(module_name: str):
+
+def parse_args(module_name: str | None = None):
     """Parse command-line arguments and return namespace with the correct types."""
+    global custom_args
+    if custom_args is not None:
+        return custom_args
+
     prog_name = utils.get_package_name() if module_name == "__main__" else None
 
     parser = ArgumentParser(
@@ -36,6 +42,13 @@ def parse_args(module_name: str):
     )
 
     parser.add_argument(
+        "--log-dir",
+        type=str,
+        default=os.environ.get("LOG_DIR", os.path.expanduser("~")),
+        help="Log file directory (default: user home directory)",
+    )
+
+    parser.add_argument(
         "--log-level",
         type=str,
         default=os.environ.get("LOG_LEVEL", "info"),
@@ -51,44 +64,50 @@ def parse_args(module_name: str):
 
     args = parser.parse_args()
 
-    return validate_args(parser, args)
+    custom_args = validate_args(parser, args)
+
+    return custom_args
 
 
 def validate_args(parser: ArgumentParser, args: Namespace):
     """Validate arguments and return the correct types."""
     host: str = args.host
     port: int = args.port
+    log_dir: str = args.log_dir
     log_level: str = args.log_level
     access_log: str = args.access_log
 
     if port != 0 and (port < 1024 or port > 65535):
-        parser.error("Port number must be between 1024 and 65535.")
+        parser.error("Invalid value for --port. Must be a valid integer between 1024 and 65535.")
+
+    if not os.path.isdir(log_dir):
+        parser.error("Invalid value for --log-dir. Must be a path to an existing directory.")
 
     if log_level.lower() not in ["critical", "error", "warning", "info", "debug", "trace"]:
-        parser.error("Invalid value for --log-level. Use -h to view options.")
+        parser.error("Invalid value for --log-level. Use --help to view options.")
 
     if access_log.lower() not in ["true", "false"]:
-        parser.error("Invalid value for --access-log. Choose 'true' or 'false'.")
+        parser.error("Invalid value for --access-log. Must be 'true' or 'false'.")
 
     access_log_bool: bool = access_log.lower() == "true"
 
-    custom_args = CustomNamespace(
+    return CustomNamespace(
         host=host,
         port=port,
+        log_dir=log_dir,
         log_level=log_level,
         access_log=access_log_bool,
     )
-
-    return custom_args
 
 
 class CustomNamespace(Namespace):
     """Custom namespace for type enforcement."""
 
-    def __init__(self, host: str, port: int, log_level: str, access_log: bool):
+    def __init__(self, host: str, port: int, log_dir: str, log_level: str, access_log: bool):
         super().__init__()
         self.host = host
         self.port = port
+        self.log_dir = log_dir
         self.log_level = log_level
         self.access_log = access_log
 
@@ -101,6 +120,11 @@ class CustomNamespace(Namespace):
 
         if not isinstance(self.port, int):
             raise TypeError(f"Expected 'port' to be of type int, got {type(self.port).__name__}")
+
+        if not isinstance(self.log_dir, str):
+            raise TypeError(
+                f"Expected 'log_dir' to be of type str, got {type(self.log_dir).__name__}"
+            )
 
         if not isinstance(self.log_level, str):
             raise TypeError(
