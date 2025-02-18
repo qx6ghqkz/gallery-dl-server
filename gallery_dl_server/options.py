@@ -89,14 +89,12 @@ def validate_args(parser: ArgumentParser, args: Namespace):
     if access_log.lower() not in ["true", "false"]:
         parser.error("Invalid value for --access-log. Must be 'true' or 'false'.")
 
-    access_log_bool: bool = access_log.lower() == "true"
-
     return CustomNamespace(
         host=host,
         port=port,
-        log_dir=log_dir,
-        log_level=log_level,
-        access_log=access_log_bool,
+        log_dir=utils.normalise_path(log_dir),
+        log_level=log_level.lower(),
+        access_log=access_log.lower() == "true",
     )
 
 

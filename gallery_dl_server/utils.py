@@ -70,9 +70,9 @@ def is_package_installed(installed_name: str):
 
 
 def normalise_path(path: str):
-    """Expands environment variables in the given path, normalises it,
-    and returns the absolute path."""
-    return os.path.abspath(os.path.normpath(os.path.expandvars(path)))
+    """Expands user constructions and environment variables in the given path,
+    normalises it, and returns the absolute path."""
+    return os.path.abspath(os.path.normpath(os.path.expandvars(os.path.expanduser(path))))
 
 
 def is_imported(module_name: str):

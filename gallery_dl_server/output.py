@@ -24,7 +24,7 @@ if args is not None:
     log_level = args.log_level.upper()
     access_log = args.access_log
 
-    if args.log_level.lower() == "trace":
+    if args.log_level == "trace":
         log_level = "DEBUG"
 else:
     log_dir = os.path.expanduser("~")
