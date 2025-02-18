@@ -9,7 +9,7 @@ web and REST interface for downloading media from various websites.
 
 import sys
 
-from . import version
+from . import app, options, utils, version
 
 if sys.version_info < (3, 10):
     raise ImportError(
@@ -83,8 +83,6 @@ def run(
         - https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
         - https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods
     """
-    from . import __main__ as main, options, utils
-
     kwargs = {
         "host": host,
         "port": port,
@@ -95,7 +93,7 @@ def run(
 
     try:
         args = options.custom_args = options.CustomNamespace(**kwargs)
-        main.main(args)
+        app.main(args)
     except TypeError as e:
         sys.stderr.write(f"{type(e).__name__}: {e}\n")
         sys.exit(1)
