@@ -7,7 +7,6 @@ This package serves as a middleware for gallery-dl and yt-dlp, providing a simpl
 web and REST interface for downloading media from various websites.
 """
 
-import os
 import sys
 
 from . import version
@@ -25,7 +24,7 @@ __all__ = ["run"]
 def run(
     host: str = "0.0.0.0",
     port: int = 0,
-    log_dir: str = os.path.expanduser("~"),
+    log_dir: str = "~",
     log_level: str = "info",
     access_log: bool = False,
 ) -> None:
@@ -56,22 +55,41 @@ def run(
         To run the server on `localhost` with a specific port:
 
         ```python
-        run(host="127.0.0.1", port=9080, log_level="info", access_log=False)
+        import gallery_dl_server as server
+
+        if __name__ == "__main__":
+            server.run(host="127.0.0.1", port=9080, log_level="info", access_log=False)
         ```
 
         To run the server on all interfaces with a random port and enable access logging:
 
         ```python
-        run(host="0.0.0.0", port=0, log_level="debug", access_log=True)
+        import gallery_dl_server as server
+
+        if __name__ == "__main__":
+            server.run(host="0.0.0.0", port=0, log_level="debug", access_log=True)
         ```
+
+        The `if __name__ == "__main__"` guard is necessary on Windows to prevent the server from
+        starting itself recursively when attempting to initiate a download.
+
+        This is because the server runs each download in a child process using the
+        `multiprocessing` module, which uses `spawn` as the default start method on Windows.
+
+        The `spawn` method creates a new Python interpreter which imports the main module,
+        causing any unguarded code to be executed again in the child process.
+
+        See the following:
+        - https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+        - https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods
     """
-    from . import __main__ as main, options
+    from . import __main__ as main, options, utils
 
     kwargs = {
         "host": host,
         "port": port,
-        "log_dir": log_dir,
-        "log_level": log_level,
+        "log_dir": utils.normalise_path(log_dir),
+        "log_level": log_level.lower(),
         "access_log": access_log,
     }
 

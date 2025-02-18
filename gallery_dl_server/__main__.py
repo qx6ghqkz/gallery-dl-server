@@ -10,7 +10,7 @@ from gallery_dl_server import options
 
 
 def main(args: options.CustomNamespace | None = None):
-    """Main entry point for running gallery-dl-server."""
+    """Main entry point for gallery-dl-server."""
     if args is None:
         try:
             args = options.parse_args(__name__)

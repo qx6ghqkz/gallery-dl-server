@@ -37,6 +37,8 @@ import yt_dlp.version
 
 from . import download, output, utils, version
 
+custom_args = output.args
+
 log_file = output.LOG_FILE
 
 log = output.initialise_logging(__name__)
@@ -82,7 +84,7 @@ async def submit_form(request: Request):
     if not video_opts:
         video_opts = "none-selected"
 
-    options = {"video-options": video_opts}
+    request_options = {"video-options": video_opts}
 
     if not url:
         log.error("No URL provided.")
@@ -94,25 +96,27 @@ async def submit_form(request: Request):
 
         return RedirectResponse(url="/gallery-dl", status_code=HTTP_303_SEE_OTHER)
 
-    task = BackgroundTask(download_task, url.strip(), options)
+    task = BackgroundTask(download_task, url.strip(), request_options)
 
     log.info("Added URL to the download queue: %s", url)
 
     if not ui:
-        return JSONResponse({"success": True, "url": url, "options": options}, background=task)
+        return JSONResponse(
+            {"success": True, "url": url, "options": request_options}, background=task
+        )
 
     return RedirectResponse(
         url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
     )
 
 
-def download_task(url: str, options: dict[str, str]):
+def download_task(url: str, request_options: dict[str, str]):
     """Initiate download as a subprocess and log output."""
     log_queue = multiprocessing.Queue()
     return_status = multiprocessing.Queue()
 
     process = multiprocessing.Process(
-        target=download.run, args=(url, options, log_queue, return_status)
+        target=download.start, args=(url, request_options, log_queue, return_status, custom_args)
     )
     process.start()
 
@@ -240,7 +244,7 @@ async def log_update(websocket: WebSocket):
 
                 new_content += await file.read()
                 if new_content.strip():
-                    await websocket.send_text(new_content)
+                    await websocket.send_text(new_content.rstrip())
 
                 last_position = await file.tell()
                 last_line = previous_line
