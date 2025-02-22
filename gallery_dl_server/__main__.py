@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import multiprocessing
 
 import uvicorn
@@ -21,8 +22,8 @@ def main():
         "port": args.port,
         "log_level": args.log_level,
         "access_log": args.access_log,
-        "proxy_headers": True,
-        "forwarded_allow_ips": "*",
+        "proxy_headers": os.environ.get("PROXY_HEADERS", "true").lower() == "true",
+        "forwarded_allow_ips": os.environ.get("FORWARDED_ALLOW_IPS", "*"),
     }
 
     config = uvicorn.Config(**kwargs)
