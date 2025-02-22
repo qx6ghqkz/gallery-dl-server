@@ -43,6 +43,8 @@ SECURITY.md
 drafts/
 gallery-dl/
 logs/
+tests/
+*.pem
 
 # Build
 build/

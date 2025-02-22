@@ -14,6 +14,11 @@ get_ids () {
   GID="${GID:-$GID_OG}"
 }
 
+set_umask () {
+  UMASK="${UMASK:-002}"
+  umask "$UMASK"
+}
+
 mod_ids () {
   groupmod --non-unique --gid "$GID" appgroup >/dev/null 2>&1
   usermod --non-unique --gid "$GID" --uid "$UID" appuser >/dev/null 2>&1
@@ -112,6 +117,7 @@ exit() {
 
 check_etc
 get_ids
+set_umask
 if [[ "$UID" -ne "$UID_OG" || "$GID" -ne "$GID_OG" ]]; then
   if [[ "$(id -u -n 2>/dev/null)" == "root" ]]; then
     mod_ids

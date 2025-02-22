@@ -21,6 +21,8 @@ def main():
         "port": args.port,
         "log_level": args.log_level,
         "access_log": args.access_log,
+        "proxy_headers": True,
+        "forwarded_allow_ips": "*",
     }
 
     config = uvicorn.Config(**kwargs)
