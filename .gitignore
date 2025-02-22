@@ -21,6 +21,8 @@ venv/
 drafts/
 gallery-dl/
 logs/
+tests/
+*.pem
 
 # Build
 build/

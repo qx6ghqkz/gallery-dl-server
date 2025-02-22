@@ -14,7 +14,10 @@ from types import FrameType
 from starlette.applications import Starlette
 from starlette.background import BackgroundTask
 from starlette.datastructures import UploadFile
-from starlette.responses import RedirectResponse, JSONResponse, StreamingResponse
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import Response, RedirectResponse, JSONResponse, StreamingResponse
 from starlette.requests import Request
 from starlette.routing import Route, WebSocketRoute, Mount
 from starlette.staticfiles import StaticFiles
@@ -292,6 +295,24 @@ async def close_connections():
             log.debug("Cleared active connections")
 
 
+class CSPMiddleware(BaseHTTPMiddleware):
+    """Enforce Content Security Policy for all requests."""
+
+    async def dispatch(self, request, call_next):
+        response: Response = await call_next(request)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self';"
+            "connect-src 'self';"
+            "form-action 'self';"
+            "manifest-src 'self';"
+            "img-src 'self' data:;"
+            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;"
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com;"
+            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com;"
+        )
+        return response
+
+
 templates = Jinja2Templates(directory=utils.resource_path("templates"))
 
 active_connections: set[WebSocket] = set()
@@ -308,4 +329,9 @@ routes = [
     Mount("/static", app=StaticFiles(directory=utils.resource_path("static")), name="static"),
 ]
 
-app = Starlette(debug=True, routes=routes, lifespan=lifespan)
+middleware = [
+    Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"]),
+    Middleware(CSPMiddleware),
+]
+
+app = Starlette(debug=True, routes=routes, middleware=middleware, lifespan=lifespan)
