@@ -1,9 +1,7 @@
 const logContainer = document.getElementById("container-logs");
 const clearLogsButton = document.getElementById("clear-logs");
 
-window.onload = () => {
-  logContainer.scrollTop = logContainer.scrollHeight;
-};
+logContainer.scrollTop = logContainer.scrollHeight;
 
 clearLogsButton.onclick = () => {
   clearLogsButton.disabled = true;
@@ -26,5 +24,6 @@ clearLogsButton.onclick = () => {
     .catch((error) => {
       console.error("Error:", error);
       logContainer.innerText = "Failed to clear logs.";
+      clearLogsButton.disabled = false;
     });
 };

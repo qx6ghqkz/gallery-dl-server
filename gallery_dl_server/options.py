@@ -77,8 +77,8 @@ def validate_args(parser: ArgumentParser, args: Namespace):
     log_level: str = args.log_level
     access_log: str = args.access_log
 
-    if port != 0 and (port < 1024 or port > 65535):
-        parser.error("Invalid value for --port. Must be a valid integer between 1024 and 65535.")
+    if port < 0 or port > 65535:
+        parser.error("Invalid value for --port. Must be a valid integer between 0 and 65535.")
 
     if not os.path.isdir(log_dir):
         parser.error("Invalid value for --log-dir. Must be a path to an existing directory.")
