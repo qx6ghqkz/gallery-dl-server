@@ -5,15 +5,19 @@ import sys
 import logging
 
 from typing import Any
+from _thread import LockType
 
 from gallery_dl import config
 
 from . import output, utils
 
-log = output.initialise_logging(__name__)
-
 _config: dict[str, Any] = config._config
 _files: list[str] = config._files
+
+
+def initialise_logging(lock: LockType | None = None):
+    global log
+    log = output.initialise_logging(__name__, lock=lock)
 
 
 def clear(conf: dict[str, Any] = _config):
