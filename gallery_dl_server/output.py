@@ -3,6 +3,7 @@
 import os
 import sys
 import logging
+import asyncio
 import re
 import pickle
 import io
@@ -10,6 +11,7 @@ import io
 from mmap import mmap
 from multiprocessing import Queue
 from typing import TextIO, Any
+from _thread import LockType
 
 import aiofiles
 
@@ -38,12 +40,18 @@ LOG_FORMAT_DEBUG = "%(asctime)s [%(name)s] [%(filename)s:%(lineno)d] [%(levelnam
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
 LOG_SEPARATOR = "/sep/"
 
+async_lock = asyncio.Lock()
+
 
 def initialise_logging(
-    name=utils.get_package_name(), stream=sys.stdout, file=LOG_FILE, level=LOG_LEVEL
+    name=utils.get_package_name(),
+    stream=sys.stdout,
+    file=LOG_FILE,
+    level=LOG_LEVEL,
+    lock: LockType | None = None,
 ):
     """Set up basic logging functionality for gallery-dl-server."""
-    logger = Logger(name)
+    logger = Logger(name, process_lock=lock)
 
     if not logger.hasHandlers():
         formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
@@ -62,16 +70,42 @@ def initialise_logging(
 
 
 class Logger(logging.Logger):
-    """Custom logger which has a method to log multi-line messages."""
+    """Custom logger which supports async logging and has a method to log multi-line messages."""
 
-    def __init__(self, name, level=logging.NOTSET):
+    def __init__(self, name: str, level=logging.NOTSET, process_lock: LockType | None = None):
         super().__init__(name, level)
+        self.async_lock = async_lock
+        self.process_lock = process_lock
 
     def log_multiline(self, level: int, message: str):
         """Log each line of a multi-line message separately."""
         for line in message.split("\n"):
             if line.strip():
                 self.log(level, line.rstrip())
+
+    def handle(self, record):
+        """Override the handle method to call the async version."""
+        if self.process_lock:
+            with self.process_lock:
+                self._handle_record(record)
+        else:
+            self._handle_record(record)
+
+    def _handle_record(self, record: logging.LogRecord):
+        """Handle log records in an event loop."""
+        try:
+            event_loop = asyncio.get_running_loop()
+            event_loop.create_task(self.handle_async(record))
+        except RuntimeError:
+            asyncio.run(self.handle_async(record))
+
+    async def handle_async(self, record: logging.LogRecord):
+        """Perform asynchronous handling of log records."""
+        if self.async_lock:
+            async with self.async_lock:
+                super().handle(record)
+        else:
+            super().handle(record)
 
 
 class Formatter(logging.Formatter):
@@ -231,9 +265,9 @@ def stderr_write(s: str, /):
     sys.stderr.flush()
 
 
-def redirect_standard_streams(stdout=True, stderr=True):
+def redirect_standard_streams(stdout=True, stderr=True, lock: LockType | None = None):
     """Redirect stdout and stderr to a logger or suppress them."""
-    logger_writer = LoggerWriter()
+    logger_writer = LoggerWriter(process_lock=lock)
     null_writer = NullWriter()
 
     if stdout:
@@ -250,9 +284,9 @@ def redirect_standard_streams(stdout=True, stderr=True):
 class LoggerWriter:
     """Log writes to stdout and stderr."""
 
-    def __init__(self, level=logging.INFO):
+    def __init__(self, level=logging.INFO, process_lock: LockType | None = None):
         self.level = level
-        self.logger = initialise_logging(type(self).__name__)
+        self.logger = initialise_logging(type(self).__name__, lock=process_lock)
 
         for handler in self.logger.handlers[:]:
             handler.close()
@@ -496,7 +530,7 @@ def register_handler(*handlers: logging.Handler):
         logging_manager.add_handler(handler)
 
 
-async def close_handlers():
+def close_handlers():
     """Close all registered logging handlers."""
     logging_manager = LoggingManager()
     logging_manager.close_all()

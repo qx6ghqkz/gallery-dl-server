@@ -9,13 +9,13 @@ web and REST interface for downloading media from various websites.
 
 import sys
 
-from . import app, options, utils, version
-
 if sys.version_info < (3, 10):
     raise ImportError(
         "You are using an unsupported version of Python. "
         "Please upgrade to Python 3.10 or above to use gallery-dl-server."
     )
+
+from . import app, options, utils, version
 
 __version__ = version.__version__
 __all__ = ["run"]
@@ -48,8 +48,7 @@ def run(
             (i.e. show `GET` requests, WebSocket connections, etc.).
 
     Raises:
-        SystemExit: If an error occurs during execution, an error message will be written to
-            standard error, and the program will exit with a status code of 1.
+        TypeError: If an invalid parameter is passed to the function, it will raise a `TypeError`.
 
     Examples:
         To run the server on `localhost` with a specific port:
@@ -94,9 +93,5 @@ def run(
     try:
         args = options.custom_args = options.CustomNamespace(**kwargs)
         app.main(args)
-    except TypeError as e:
-        sys.stderr.write(f"{type(e).__name__}: {e}\n")
-        sys.exit(1)
-    except Exception as e:
-        sys.stderr.write(f"An unexpected error occurred: {type(e).__name__}: {e}\n")
-        sys.exit(1)
+    except TypeError:
+        raise

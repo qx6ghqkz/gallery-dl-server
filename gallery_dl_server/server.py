@@ -17,7 +17,7 @@ from starlette.datastructures import UploadFile
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import Response, RedirectResponse, JSONResponse, StreamingResponse
+from starlette.responses import RedirectResponse, JSONResponse, StreamingResponse
 from starlette.requests import Request
 from starlette.routing import Route, WebSocketRoute, Mount
 from starlette.staticfiles import StaticFiles
@@ -28,6 +28,7 @@ from starlette.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from starlette.templating import Jinja2Templates
+from starlette.types import ASGIApp
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 import aiofiles
@@ -40,11 +41,12 @@ from . import download, output, utils, version
 custom_args = output.args
 
 log_file = output.LOG_FILE
+async_lock = output.async_lock
 
-log = output.initialise_logging(__name__)
-blank = output.get_blank_logger()
+process_manager = multiprocessing.Manager()
+process_lock = process_manager.Lock()
 
-blank_sent = False
+log = output.initialise_logging(__name__, lock=process_lock)
 
 
 async def redirect(request: Request):
@@ -64,12 +66,6 @@ async def homepage(request: Request):
 
 
 async def submit_form(request: Request):
-    global blank_sent
-
-    if not blank_sent:
-        blank.info("")
-        blank_sent = True
-
     form_data = await request.form()
 
     url = form_data.get("url")
@@ -111,13 +107,13 @@ async def submit_form(request: Request):
 
 
 def download_task(url: str, request_options: dict[str, str]):
-    """Initiate download as a subprocess and log output."""
+    """Initiate download as a subprocess and log the output."""
     log_queue = multiprocessing.Queue()
     return_status = multiprocessing.Queue()
 
-    process = multiprocessing.Process(
-        target=download.start, args=(url, request_options, log_queue, return_status, custom_args)
-    )
+    args = (url, request_options, log_queue, return_status, custom_args, process_lock)
+
+    process = multiprocessing.Process(target=download.start, args=args)
     process.start()
 
     while True:
@@ -163,7 +159,7 @@ async def log_route(request: Request):
             log.debug(f"Exception: {type(e).__name__}: {e}")
             return f"An error occurred: {e}"
 
-        return log_contents
+        return log_contents if log_contents else "No logs were found."
 
     logs = await read_log_file(log_file)
 
@@ -234,20 +230,22 @@ async def log_update(websocket: WebSocket):
 
             async for changes in watchfiles.awatch(log_file, stop_event=shutdown_event):
                 await asyncio.sleep(1)
-                await file.seek(last_position)
 
-                new_content = ""
-                previous_line = await output.read_previous_line(log_file)
-                if previous_line and last_line:
-                    if "B/s" in previous_line and "B/s" in last_line:
-                        new_content = previous_line + "\n"
+                async with async_lock:
+                    await file.seek(last_position)
 
-                new_content += await file.read()
-                if new_content.strip():
-                    await websocket.send_text(new_content.rstrip())
+                    new_content = ""
+                    previous_line = await output.read_previous_line(log_file)
+                    if previous_line and last_line:
+                        if "B/s" in previous_line and "B/s" in last_line:
+                            new_content = previous_line + "\n"
 
-                last_position = await file.tell()
-                last_line = previous_line
+                    new_content += await file.read()
+                    if new_content.strip():
+                        await websocket.send_text(new_content.rstrip())
+
+                    last_position = await file.tell()
+                    last_line = previous_line
     except asyncio.CancelledError as e:
         log.debug(f"Exception: {type(e).__name__}")
     except WebSocketDisconnect as e:
@@ -268,8 +266,8 @@ async def lifespan(app: Starlette):
     await shutdown_override()
     try:
         yield
-    except asyncio.CancelledError as e:
-        log.debug(f"Exception: {type(e).__name__}")
+    except asyncio.CancelledError:
+        pass
     finally:
         if utils.CONTAINER and os.path.isdir("/config"):
             if os.path.isfile(log_file) and os.path.getsize(log_file) > 0:
@@ -282,13 +280,23 @@ async def lifespan(app: Starlette):
 
 
 async def shutdown_override():
-    """Override uvicorn exit handler to ensure a graceful shutdown."""
+    """Override uvicorn signal handlers to ensure a graceful shutdown."""
     sigint_handler = signal.getsignal(signal.SIGINT)
     sigterm_handler = signal.getsignal(signal.SIGTERM)
 
     def shutdown(sig: int, frame: FrameType | None = None):
-        shutdown_handler()
+        global shutdown_in_progress
+        if shutdown_in_progress:
+            return
 
+        shutdown_in_progress = True
+
+        event_loop = asyncio.get_event_loop()
+        future = asyncio.run_coroutine_threadsafe(shutdown_handler(), event_loop)
+        future.add_done_callback(lambda f: call_original_handler(sig, frame))
+
+    def call_original_handler(sig: int, frame: FrameType | None = None):
+        """Call the original signal handler for server shutdown."""
         if sig == signal.SIGINT and callable(sigint_handler):
             sigint_handler(sig, frame)
         elif sig == signal.SIGTERM and callable(sigterm_handler):
@@ -298,14 +306,14 @@ async def shutdown_override():
     signal.signal(signal.SIGTERM, shutdown)
 
 
-def shutdown_handler():
+async def shutdown_handler():
     """Initiate server shutdown."""
     if not shutdown_event.is_set():
         shutdown_event.set()
         log.debug("Set shutdown event")
 
-    asyncio.create_task(close_connections())
-    asyncio.create_task(output.close_handlers())
+    await close_connections()
+    finalise_logging()
 
 
 async def close_connections():
@@ -329,21 +337,22 @@ async def close_connections():
             log.debug("Cleared active connections")
 
 
+def finalise_logging():
+    """Close logging handlers and stop managers."""
+    output.close_handlers()
+    process_manager.shutdown()
+
+
 class CSPMiddleware(BaseHTTPMiddleware):
     """Enforce Content Security Policy for all requests."""
 
+    def __init__(self, app: ASGIApp, csp_policy: str):
+        super().__init__(app)
+        self.csp_policy = csp_policy
+
     async def dispatch(self, request, call_next):
-        response: Response = await call_next(request)
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self';"
-            "connect-src 'self';"
-            "form-action 'self';"
-            "manifest-src 'self';"
-            "img-src 'self' data:;"
-            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;"
-            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com;"
-            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com;"
-        )
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = self.csp_policy
         return response
 
 
@@ -352,6 +361,7 @@ templates = Jinja2Templates(directory=utils.resource_path("templates"))
 active_connections: set[WebSocket] = set()
 connections_lock = asyncio.Lock()
 shutdown_event = asyncio.Event()
+shutdown_in_progress = False
 
 routes = [
     Route("/", endpoint=redirect, methods=["GET"]),
@@ -364,9 +374,20 @@ routes = [
     Mount("/static", app=StaticFiles(directory=utils.resource_path("static")), name="static"),
 ]
 
+csp_policy = (
+    "default-src 'self'; "
+    "connect-src 'self'; "
+    "form-action 'self'; "
+    "manifest-src 'self'; "
+    "img-src 'self' data:; "
+    "script-src 'self' https://cdn.jsdelivr.net; "
+    "style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+    "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com;"
+)
+
 middleware = [
-    Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"]),
-    Middleware(CSPMiddleware),
+    Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST"]),
+    Middleware(CSPMiddleware, csp_policy=csp_policy),
 ]
 
 app = Starlette(debug=True, routes=routes, middleware=middleware, lifespan=lifespan)

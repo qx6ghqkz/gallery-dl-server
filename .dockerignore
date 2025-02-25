@@ -6,7 +6,7 @@ __pycache__/
 .ruff_cache/
 
 # Scripts
-scripts/
+/scripts/
 *.bat
 *.cmd
 *.ps1

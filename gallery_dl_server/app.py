@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import multiprocessing
 
 import uvicorn
@@ -9,20 +8,14 @@ import uvicorn
 from . import options
 
 
-def main(args: options.CustomNamespace | None = None):
+def main(args: options.CustomNamespace | None = None, module_name: str | None = None):
     """Main entry point for gallery-dl-server."""
     if args is None:
-        try:
-            args = options.parse_args(__name__)
-        except TypeError as e:
-            sys.stderr.write(f"{type(e).__name__}: {e}\n")
-            sys.exit(1)
-
-    from . import output, server
-
-    log = output.initialise_logging(__name__)
+        args = options.parse_args(module_name)
 
     multiprocessing.freeze_support()
+
+    from . import server
 
     kwargs = {
         "app": server.app,
@@ -39,8 +32,5 @@ def main(args: options.CustomNamespace | None = None):
 
     try:
         uvicorn_server.run()
-    except KeyboardInterrupt as e:
-        log.debug(f"Exception: {type(e).__name__}")
-    except Exception as e:
-        log.error(f"An unexpected error occurred: {type(e).__name__}: {e}")
-        sys.exit(1)
+    except KeyboardInterrupt:
+        pass
