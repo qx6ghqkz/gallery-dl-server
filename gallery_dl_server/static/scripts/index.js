@@ -25,39 +25,6 @@ darkModeToggle.onclick = () => {
   }
 };
 
-const urlParams = new URLSearchParams(window.location.search);
-const added = urlParams.get("added");
-
-const successAlert = Swal.mixin({
-  animation: true,
-  position: "top-end",
-  icon: "success",
-  iconColor: "#550572",
-  color: "#43045a",
-  showConfirmButton: false,
-  confirmButtonText: "OK",
-  confirmButtonColor: "#550572",
-  showCloseButton: true,
-  closeButtonHtml: "&times;",
-  target: "body",
-  timer: 3000,
-  timerProgressBar: true,
-  toast: true,
-  didOpen: (toast) => {
-    toast.onmouseenter = Swal.stopTimer;
-    toast.onmouseleave = Swal.resumeTimer;
-  }
-});
-
-if (added) {
-  successAlert.fire({
-    title: "Success!",
-    html: `Added
-      <a id="success-alert" href="${added}" target="_blank" rel="noopener noreferrer">one item</a>
-      to the download queue.`
-  });
-}
-
 const selectElement = document.querySelector("select[name='video-opts']");
 
 function setSelectedValue() {
@@ -141,6 +108,67 @@ scrollOnResize();
 
 document.querySelector("body").classList.remove("d-none");
 
+const form = document.getElementById("form");
+const successAlert = Swal.mixin({
+  animation: true,
+  position: "top-end",
+  icon: "success",
+  iconColor: "#550572",
+  color: "#550572",
+  showConfirmButton: false,
+  confirmButtonText: "OK",
+  confirmButtonColor: "#550572",
+  showCloseButton: true,
+  closeButtonHtml: "&times;",
+  target: "body",
+  timer: 3000,
+  timerProgressBar: true,
+  toast: true,
+  didOpen: (toast) => {
+    toast.onmouseenter = Swal.stopTimer;
+    toast.onmouseleave = Swal.resumeTimer;
+  }
+});
+
+form.onsubmit = async (event) => {
+  event.preventDefault();
+
+  if (ws.readyState === WebSocket.CLOSED) {
+    connectWebSocket();
+  }
+
+  const formData = new FormData(event.target);
+  const url = formData.get("url");
+
+  try {
+    const response = await fetch("/gallery-dl/q", {
+      method: "POST",
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(data);
+
+    event.target.url.value = "";
+
+    if (url) {
+      successAlert.fire({
+        title: "Success!",
+        html: `Added
+          <a href="${url}" target="_blank" rel="noopener noreferrer">one item</a>
+          to the download queue.`
+      });
+    }
+  }
+  catch (error) {
+    console.error(error);
+  }
+};
+
 let ws;
 let isConnected = false;
 let isPageAlive = true;
@@ -181,6 +209,9 @@ function connectWebSocket(allowReconnect = true) {
   const host = window.location.host;
   const url = `${protocol}${host}/ws/logs`;
 
+  let lastLine = "";
+  let lastPos = 0;
+
   ws = new WebSocket(url);
 
   ws.onopen = () => {
@@ -189,25 +220,36 @@ function connectWebSocket(allowReconnect = true) {
   };
 
   ws.onmessage = (event) => {
-    const newLines = event.data.split("\n").map(line => line.trim()).filter(Boolean);
-    if (newLines.length === 0) return;
+    const newLines = event.data.split("\n").filter(Boolean);
+    if (!newLines.length) return;
+
+    const lines = box.textContent.split("\n").filter(Boolean);
+
+    lastLine = lastPos ? lines[lastPos] : lines[lines.length - 1] || null;
+
+    const isLastLineProgress = lastLine?.includes("B/s");
+    const isNewLineProgress = newLines[0].includes("B/s");
+
+    if (newLines.length > 1 && isNewLineProgress && newLines[1].includes("B/s")) {
+      newLines.pop();
+    }
 
     let progressUpdate = false;
 
-    const lines = box.textContent.split("\n").filter(Boolean);
-    const lastLine = lines.length > 0 ? lines[lines.length - 1] : null;
-
-    if (lastLine && lastLine.includes("B/s") && newLines[0].includes("B/s")) {
+    if (isLastLineProgress && isNewLineProgress) {
       progressUpdate = true;
-
-      lines[lines.length - 1] = newLines[0];
-      lines.push(...newLines.slice(1));
-    } else {
-      lines.push(...newLines);
+      lastPos = lastPos || lines.length - 1;
+      lines[lastPos] = newLines[0];
     }
+    else if (isLastLineProgress && !isNewLineProgress) {
+      lastPos = 0;
+    }
+
+    lines.push(...newLines.slice(progressUpdate ? 1 : 0));
+
     box.textContent = lines.join("\n") + "\n";
 
-    if (!progressUpdate) {
+    if (!progressUpdate || newLines.length > 1) {
       box.scrollTop = box.scrollHeight;
     }
   };

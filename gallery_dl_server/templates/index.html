@@ -38,8 +38,8 @@
     />
 
     <link rel="stylesheet" href="/static/styles/common.css?v=0.1.2" />
-    <link rel="stylesheet" href="/static/styles/index.css?v=0.1.4" />
-    <link rel="stylesheet" href="/static/styles/index-dark.css?v=0.1.0" id="dark-mode" disabled />
+    <link rel="stylesheet" href="/static/styles/index.css?v=0.1.5" />
+    <link rel="stylesheet" href="/static/styles/index-dark.css?v=0.1.1" id="dark-mode" disabled />
 
     <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
 
@@ -105,9 +105,7 @@
           >.</p
         >
 
-        <form class="mb-4" action="/gallery-dl/q" method="POST">
-          <input type="hidden" name="ui" value="true" />
-
+        <form id="form" class="mb-4">
           <div class="input-group">
             <input
               name="url"
@@ -166,6 +164,6 @@
       <button id="dark-mode-toggle" class="btn btn-custom"><i class="bi bi-moon-fill"></i></button>
     </footer>
 
-    <script src="/static/scripts/index.js?v=0.1.4"></script>
+    <script src="/static/scripts/index.js?v=0.1.5"></script>
   </body>
 </html>

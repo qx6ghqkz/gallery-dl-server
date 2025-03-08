@@ -83,7 +83,9 @@ def validate_args(parser: ArgumentParser, args: Namespace):
     if not os.path.isdir(log_dir):
         parser.error("Invalid value for --log-dir. Must be a path to an existing directory.")
 
-    if log_level.lower() not in ["critical", "error", "warning", "info", "debug", "trace"]:
+    log_levels = ["critical", "error", "warning", "info", "debug", "trace"]
+
+    if log_level.lower() not in log_levels:
         parser.error("Invalid value for --log-level. Use --help to view options.")
 
     if access_log.lower() not in ["true", "false"]:
@@ -112,7 +114,7 @@ class CustomNamespace(Namespace):
         self._validate_types()
 
     def _validate_types(self):
-        """Perform validation of types."""
+        """Perform type validation."""
         if not isinstance(self.host, str):
             raise TypeError(f"Expected 'host' to be of type str, got {type(self.host).__name__}")
 

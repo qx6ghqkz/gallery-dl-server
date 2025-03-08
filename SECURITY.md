@@ -2,4 +2,4 @@
 
 ## Reporting a Vulnerability
 
-This service isn't intended to be exposed to the internet but if you find something that you think should be addressed, you can [report a vulnerability](https://github.com/qx6ghqkz/gallery-dl-server/security/advisories/new).
+This service is not intended for direct exposure to the internet. For external access, the server should be placed behind a reverse proxy. If you find something you think should be addressed, please feel free to [open a new issue](https://github.com/qx6ghqkz/gallery-dl-server/issues/new).
