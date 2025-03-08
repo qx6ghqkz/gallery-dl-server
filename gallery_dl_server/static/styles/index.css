@@ -6,16 +6,32 @@ h1, a {
   white-space: nowrap;
 }
 
-#success-alert {
+#swal2-html-container > a {
   color: #d000ff;
 }
 
-body a:not(header a, #success-alert) {
+#swal2-html-container > a:hover, .swal2-close:hover {
+  color: #b200e1;
+}
+
+.swal2-close {
+  color: #550572;
+}
+
+.swal2-timer-progress-bar {
+  background-color: #550572;
+}
+
+.swal2-success > div {
+  background-color: transparent !important;
+}
+
+body a:not(header a) {
   color: white;
   transition: color 0.2s ease;
 }
 
-body a:not(header a, #success-alert):hover {
+body a:not(header a):hover {
   color: #d000ff;
 }
 

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from itertools import chain
-from multiprocessing import Queue
-from _thread import LockType
+from multiprocessing.queues import Queue
+from multiprocessing.synchronize import Lock
+from typing import Any
 
 from gallery_dl import job, exception
 
@@ -12,10 +13,10 @@ from . import options
 def start(
     url: str,
     request_options: dict[str, str],
-    log_queue: Queue,
-    return_status: Queue,
+    log_queue: Queue[dict[str, Any]],
+    return_status: Queue[int],
     custom_args: options.CustomNamespace | None,
-    process_lock: LockType | None = None,
+    process_lock: Lock | None = None,
 ):
     """Download subprocess entry point."""
     options.custom_args = custom_args
@@ -28,9 +29,9 @@ def start(
     def run(
         url: str,
         request_options: dict[str, str],
-        log_queue: Queue,
-        return_status: Queue,
-        process_lock: LockType | None = None,
+        log_queue: Queue[dict[str, Any]],
+        return_status: Queue[int],
+        process_lock: Lock | None = None,
     ):
         """Set gallery-dl configuration, set up logging and run download job."""
         config_files = [
@@ -64,20 +65,22 @@ def start(
         except Exception as e:
             status = -1
             log.error(f"Exception: {type(e).__name__}: {e}")
-        except KeyboardInterrupt as e:
-            log.debug(f"Exception: {type(e).__name__}")
+        except KeyboardInterrupt:
+            pass
+
+        output.close_handlers()
 
         return_status.put(status)
 
     def config_update(request_options: dict[str, str]):
         """Update loaded configuration with request options."""
-        entries_added = []
-        entries_removed = []
+        entries_added: list[dict[str, Any] | None] = []
+        entries_removed: list[Any] = []
 
         requested_format = request_options.get("video-options", "none-selected")
 
         if requested_format == "none-selected":
-            return (entries_added, entries_removed)
+            return entries_added, entries_removed
 
         cmdline_args = config.get(["extractor", "ytdl", "cmdline-args"])
         raw_options = config.get(["extractor", "ytdl", "raw-options"])
@@ -132,6 +135,6 @@ def start(
                 config.remove(cmdline_args, item="--merge-output-format", value="any")
             )
 
-        return (entries_added, entries_removed)
+        return entries_added, entries_removed
 
     run(url, request_options, log_queue, return_status, process_lock)

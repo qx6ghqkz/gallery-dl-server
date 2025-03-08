@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import os
-import multiprocessing
-import queue
 import asyncio
-import signal
+import multiprocessing
+import os
+import queue
 import shutil
+import signal
 import time
 
 from contextlib import asynccontextmanager
+from multiprocessing.queues import Queue
+from multiprocessing.synchronize import Lock
 from types import FrameType
+from typing import Any
+
+import aiofiles
+import watchfiles
 
 from starlette.applications import Starlette
 from starlette.background import BackgroundTask
@@ -23,7 +29,6 @@ from starlette.routing import Route, WebSocketRoute, Mount
 from starlette.staticfiles import StaticFiles
 from starlette.status import (
     HTTP_200_OK,
-    HTTP_303_SEE_OTHER,
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
@@ -31,8 +36,6 @@ from starlette.templating import Jinja2Templates
 from starlette.types import ASGIApp
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-import aiofiles
-import watchfiles
 import gallery_dl.version
 import yt_dlp.version
 
@@ -41,19 +44,22 @@ from . import download, output, utils, version
 custom_args = output.args
 
 log_file = output.LOG_FILE
-async_lock = output.async_lock
+last_line = ""
+last_position = 0
 
-process_manager = multiprocessing.Manager()
-process_lock = process_manager.Lock()
+async_lock = output.async_lock
+process_lock: Lock | None = multiprocessing.Lock()
 
 log = output.initialise_logging(__name__, lock=process_lock)
 
 
 async def redirect(request: Request):
+    """Redirect to homepage on request."""
     return RedirectResponse(url="/gallery-dl")
 
 
 async def homepage(request: Request):
+    """Return homepage template response."""
     return templates.TemplateResponse(
         "index.html",
         {
@@ -66,50 +72,47 @@ async def homepage(request: Request):
 
 
 async def submit_form(request: Request):
+    """Process form submission data and start download in the background."""
     form_data = await request.form()
 
-    url = form_data.get("url")
-    ui = form_data.get("ui")
-    video_opts = form_data.get("video-opts")
+    keys = ("url", "video-opts")
+    values = tuple(form_data.get(key) for key in keys)
 
-    data = [url, ui, video_opts]
-    data = [None if isinstance(value, UploadFile) else value for value in data]
+    url, video_opts = (None if isinstance(value, UploadFile) else value for value in values)
 
-    url, ui, video_opts = data
+    if not url:
+        log.error("No URL provided.")
+
+        return JSONResponse(
+            {
+                "success": False,
+                "error": "/q called without a 'url' in form data",
+            },
+        )
 
     if not video_opts:
         video_opts = "none-selected"
 
     request_options = {"video-options": video_opts}
 
-    if not url:
-        log.error("No URL provided.")
-
-        if not ui:
-            return JSONResponse(
-                {"success": False, "error": "/q called without a 'url' in form data"}
-            )
-
-        return RedirectResponse(url="/gallery-dl", status_code=HTTP_303_SEE_OTHER)
-
     task = BackgroundTask(download_task, url.strip(), request_options)
 
     log.info("Added URL to the download queue: %s", url)
 
-    if not ui:
-        return JSONResponse(
-            {"success": True, "url": url, "options": request_options}, background=task
-        )
-
-    return RedirectResponse(
-        url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
+    return JSONResponse(
+        {
+            "success": True,
+            "url": url,
+            "options": request_options,
+        },
+        background=task,
     )
 
 
 def download_task(url: str, request_options: dict[str, str]):
     """Initiate download as a subprocess and log the output."""
-    log_queue = multiprocessing.Queue()
-    return_status = multiprocessing.Queue()
+    log_queue: Queue[dict[str, Any]] = multiprocessing.Queue()
+    return_status: Queue[int] = multiprocessing.Queue()
 
     args = (url, request_options, log_queue, return_status, custom_args, process_lock)
 
@@ -119,7 +122,6 @@ def download_task(url: str, request_options: dict[str, str]):
     while True:
         if log_queue.empty() and not process.is_alive():
             break
-
         try:
             record_dict = log_queue.get(timeout=1)
             record = output.dict_to_record(record_dict)
@@ -147,6 +149,8 @@ def download_task(url: str, request_options: dict[str, str]):
 
 
 async def log_route(request: Request):
+    """Return logs page template response."""
+
     async def read_log_file(file_path: str):
         log_contents = ""
         try:
@@ -159,42 +163,64 @@ async def log_route(request: Request):
             log.debug(f"Exception: {type(e).__name__}: {e}")
             return f"An error occurred: {e}"
 
-        return log_contents if log_contents else "No logs were found."
+        return log_contents if log_contents else "No logs to display."
 
     logs = await read_log_file(log_file)
 
     return templates.TemplateResponse(
-        "logs.html", {"request": request, "app_version": version.__version__, "logs": logs}
+        "logs.html",
+        {
+            "request": request,
+            "app_version": version.__version__,
+            "logs": logs,
+        },
     )
 
 
 async def clear_logs(request: Request):
+    """Clear the log file on request."""
     try:
         with open(log_file, "w") as file:
             file.write("")
+
         return JSONResponse(
-            {"success": True, "message": "Logs successfully cleared."},
+            {
+                "success": True,
+                "message": "Logs successfully cleared.",
+            },
             status_code=HTTP_200_OK,
         )
     except FileNotFoundError:
         return JSONResponse(
-            {"success": False, "error": "Log file not found."},
+            {
+                "success": False,
+                "error": "Log file not found.",
+            },
             status_code=HTTP_404_NOT_FOUND,
         )
     except IOError:
         return JSONResponse(
-            {"success": False, "error": "An error occurred while accessing the log file."},
+            {
+                "success": False,
+                "error": "An error occurred while accessing the log file.",
+            },
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
         )
     except Exception as e:
         log.debug(f"Exception: {type(e).__name__}: {e}")
+
         return JSONResponse(
-            {"success": False, "error": str(e)},
+            {
+                "success": False,
+                "error": str(e),
+            },
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
 async def log_stream(request: Request):
+    """Stream the full contents of the log file."""
+
     async def file_iterator(file_path: str):
         try:
             async with aiofiles.open(file_path, mode="r", encoding="utf-8") as file:
@@ -216,6 +242,9 @@ async def log_stream(request: Request):
 
 
 async def log_update(websocket: WebSocket):
+    """Stream log file updates over WebSocket connection."""
+    global last_line, last_position
+
     await websocket.accept()
     log.debug(f"Accepted WebSocket connection: {websocket}")
 
@@ -225,27 +254,42 @@ async def log_update(websocket: WebSocket):
     try:
         async with aiofiles.open(log_file, mode="r", encoding="utf-8") as file:
             await file.seek(0, os.SEEK_END)
-            last_position = await file.tell()
-            last_line = ""
 
-            async for changes in watchfiles.awatch(log_file, stop_event=shutdown_event):
-                await asyncio.sleep(1)
-
-                async with async_lock:
-                    await file.seek(last_position)
-
+            async for changes in watchfiles.awatch(
+                log_file,
+                stop_event=shutdown_event,
+                rust_timeout=100,
+                yield_on_timeout=True,
+            ):
+                if async_lock:
+                    await async_lock.acquire()
+                try:
                     new_content = ""
-                    previous_line = await output.read_previous_line(log_file)
-                    if previous_line and last_line:
-                        if "B/s" in previous_line and "B/s" in last_line:
-                            new_content = previous_line + "\n"
+                    do_update_state = False
 
-                    new_content += await file.read()
+                    previous_line, position = await output.read_previous_line(
+                        log_file, last_position
+                    )
+                    if "B/s" in previous_line and previous_line != last_line:
+                        new_content = previous_line
+                        do_update_state = True
+
+                    new_lines = await file.read()
+                    if new_lines.strip():
+                        new_content += new_lines
+
                     if new_content.strip():
-                        await websocket.send_text(new_content.rstrip())
+                        await websocket.send_text(new_content)
 
-                    last_position = await file.tell()
-                    last_line = previous_line
+                        if do_update_state:
+                            last_line = previous_line
+                            last_position = position
+                        else:
+                            last_line = ""
+                            last_position = 0
+                finally:
+                    if async_lock:
+                        async_lock.release()
     except asyncio.CancelledError as e:
         log.debug(f"Exception: {type(e).__name__}")
     except WebSocketDisconnect as e:
@@ -261,6 +305,7 @@ async def log_update(websocket: WebSocket):
 
 @asynccontextmanager
 async def lifespan(app: Starlette):
+    """Run server startup and shutdown tasks."""
     uvicorn_log = output.configure_uvicorn_logs()
     uvicorn_log.info(f"Starting {type(app).__name__} application.")
     await shutdown_override()
@@ -285,6 +330,7 @@ async def shutdown_override():
     sigterm_handler = signal.getsignal(signal.SIGTERM)
 
     def shutdown(sig: int, frame: FrameType | None = None):
+        """Call shutdown handler and then original handler as a callback."""
         global shutdown_in_progress
         if shutdown_in_progress:
             return
@@ -313,7 +359,7 @@ async def shutdown_handler():
         log.debug("Set shutdown event")
 
     await close_connections()
-    finalise_logging()
+    output.close_handlers()
 
 
 async def close_connections():
@@ -335,12 +381,6 @@ async def close_connections():
         if active_connections:
             active_connections.clear()
             log.debug("Cleared active connections")
-
-
-def finalise_logging():
-    """Close logging handlers and stop managers."""
-    output.close_handlers()
-    process_manager.shutdown()
 
 
 class CSPMiddleware(BaseHTTPMiddleware):

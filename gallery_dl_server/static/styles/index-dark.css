@@ -26,23 +26,26 @@ div.input-group > select.form-select:focus {
   color: #ffffff;
 }
 
-.swal2-popup {
-  background-color: #181a1b !important;
-  color: #afafaf !important;
+.swal2-popup.swal2-toast {
+  background-color: #181a1b;
 }
 
-.swal2-success > div:not(.swal2-success-ring) {
-  background-color: #181a1b !important;
+#swal2-title, #swal2-html-container {
+  color: #afafaf;
 }
 
-.swal2-success-ring {
-  border-color: #9200b3 !important;
+.swal2-close {
+  color: #9200b3;
+}
+
+.swal2-timer-progress-bar {
+  background-color: #9200b3;
 }
 
 .swal2-success > span {
   background-color: #9200b3 !important;
 }
 
-.swal2-timer-progress-bar {
-  background-color: #9200b3 !important;
+.swal2-success-ring {
+  border-color: #9200b3 !important;
 }
