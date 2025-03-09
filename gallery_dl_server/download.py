@@ -2,7 +2,6 @@
 
 from itertools import chain
 from multiprocessing.queues import Queue
-from multiprocessing.synchronize import Lock
 from typing import Any
 
 from gallery_dl import job, exception
@@ -16,22 +15,19 @@ def start(
     log_queue: Queue[dict[str, Any]],
     return_status: Queue[int],
     custom_args: options.CustomNamespace | None,
-    process_lock: Lock | None = None,
 ):
     """Download subprocess entry point."""
     options.custom_args = custom_args
 
     from . import config, output
 
-    config.initialise_logging(lock=process_lock)
-    log = output.initialise_logging(__name__, lock=process_lock)
+    log = output.initialise_logging(__name__)
 
     def run(
         url: str,
         request_options: dict[str, str],
         log_queue: Queue[dict[str, Any]],
         return_status: Queue[int],
-        process_lock: Lock | None = None,
     ):
         """Set gallery-dl configuration, set up logging and run download job."""
         config_files = [
@@ -44,7 +40,7 @@ def start(
 
         output.setup_logging()
         output.capture_logs(log_queue)
-        output.redirect_standard_streams(lock=process_lock)
+        output.redirect_standard_streams()
 
         log.info(f"Requested download with the following options: {request_options}")
 
@@ -137,4 +133,4 @@ def start(
 
         return entries_added, entries_removed
 
-    run(url, request_options, log_queue, return_status, process_lock)
+    run(url, request_options, log_queue, return_status)

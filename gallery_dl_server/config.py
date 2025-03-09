@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 
-from multiprocessing.synchronize import Lock
 from typing import Any
 
 from gallery_dl import config
@@ -14,10 +13,7 @@ from . import output, utils
 _config: dict[str, Any] = config._config
 _files: list[str] = config._files
 
-
-def initialise_logging(lock: Lock | None = None):
-    global log
-    log = output.initialise_logging(__name__, lock=lock)
+log = output.initialise_logging(__name__)
 
 
 def clear(conf: dict[str, Any] = _config):

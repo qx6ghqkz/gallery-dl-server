@@ -11,22 +11,13 @@ import queue
 import re
 import threading
 
-from mmap import mmap
+from mmap import mmap, ACCESS_READ, ACCESS_WRITE
 from multiprocessing.queues import Queue
-from multiprocessing.synchronize import Lock
 from typing import TextIO, Any
-
-import aiofiles
 
 from gallery_dl import output, job
 
 from . import options, utils
-
-if utils.WINDOWS:
-    import msvcrt
-else:
-    import termios
-    import tty
 
 args = options.custom_args
 
@@ -49,23 +40,19 @@ LOG_FORMAT_DEBUG = "%(asctime)s [%(name)s] [%(filename)s:%(lineno)d] [%(levelnam
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
 LOG_SEPARATOR = "/sep/"
 
-async_lock: asyncio.Lock | None = asyncio.Lock()
-thread_lock: "threading.Lock | None" = threading.Lock()
-
 
 def initialise_logging(
     name=utils.get_package_name(),
     stream: TextIO | Any = sys.__stdout__,
     file=LOG_FILE,
     level=LOG_LEVEL,
-    lock: Lock | None = None,
 ):
     """Set up basic logging functionality for gallery-dl-server."""
-    logger = Logger(name, level, lock)
+    logger = AsyncLogger(name, level)
     logger.propagate = False
 
     if not logger.hasHandlers():
-        formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
 
         handler_console = setup_stream_handler(stream, formatter)
         logger.addHandler(handler_console)
@@ -77,13 +64,11 @@ def initialise_logging(
     return logger
 
 
-class Logger(logging.Logger):
-    """Custom logger which supports async logging and has a method to log multi-line messages."""
+class AsyncLogger(logging.Logger):
+    """Custom logger for async logging and logging multi-line messages."""
 
-    def __init__(self, name: str, level=logging.NOTSET, process_lock: Lock | None = None):
+    def __init__(self, name: str, level=logging.NOTSET):
         super().__init__(name, level)
-        self.async_lock = async_lock
-        self.process_lock = process_lock
 
     def log_multiline(self, level: int, msg: str):
         """Log each line of a multi-line message separately."""
@@ -93,14 +78,6 @@ class Logger(logging.Logger):
 
     def handle(self, record):
         """Override handle method to call the async version."""
-        if self.process_lock:
-            with self.process_lock:
-                self._handle_record(record)
-        else:
-            self._handle_record(record)
-
-    def _handle_record(self, record: logging.LogRecord):
-        """Handle log records in an event loop."""
         try:
             event_loop = asyncio.get_running_loop()
             event_loop.create_task(self.handle_async(record))
@@ -109,14 +86,10 @@ class Logger(logging.Logger):
 
     async def handle_async(self, record: logging.LogRecord):
         """Perform asynchronous handling of log records."""
-        if self.async_lock:
-            async with self.async_lock:
-                super().handle(record)
-        else:
-            super().handle(record)
+        super().handle(record)
 
 
-class Formatter(logging.Formatter):
+class CustomFormatter(logging.Formatter):
     """Custom formatter for log messages."""
 
     def format(self, record):
@@ -159,7 +132,7 @@ def get_logger(name: str | None = None):
 
 def get_blank_logger(name="blank", stream=sys.stdout, level=logging.INFO):
     """Return a basic logger with no formatter."""
-    logger = Logger(name, level)
+    logger = AsyncLogger(name, level)
     logger.propagate = False
 
     if not logger.hasHandlers():
@@ -271,9 +244,9 @@ def stderr_write(s: str, /):
     sys.stderr.flush()
 
 
-def redirect_standard_streams(level=logging.INFO, lock: Lock | None = None):
+def redirect_standard_streams(level=logging.INFO):
     """Redirect stdout and stderr streams and log at level."""
-    logger_writer = LoggerWriter(level, lock)
+    logger_writer = LoggerWriter(level)
 
     setattr(sys, "stdout", logger_writer)
     setattr(sys, "stderr", logger_writer)
@@ -282,10 +255,10 @@ def redirect_standard_streams(level=logging.INFO, lock: Lock | None = None):
 class LoggerWriter:
     """Log writes to stdout and stderr."""
 
-    def __init__(self, level=logging.INFO, process_lock: Lock | None = None):
+    def __init__(self, level=logging.INFO):
         self.level = level
         self.stream = sys.__stdout__
-        self.logger = initialise_logging(type(self).__name__, lock=process_lock)
+        self.logger = initialise_logging(type(self).__name__)
 
         for handler in self.logger.handlers[:]:
             handler.close()
@@ -335,137 +308,21 @@ class ConsoleProgress(logging.StreamHandler):
     def __init__(self, stream: TextIO | Any = NullStream()):
         super().__init__(stream)
         self.stream: TextIO | Any
-        self.console_manager = ConsoleManager(self.stream)
-        self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        self.formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
         self.last_msg = ""
-        self.queue = queue.Queue()
-        self.thread = threading.Thread(target=self.process_queue, daemon=True)
-        self.thread.start()
 
     def emit(self, record):
-        """Override emit method to queue progress updates."""
+        """Override emit method to write final progress update."""
         msg = self.format(record)
 
-        if "B/s" in msg and "B/s" in self.last_msg:
-            self.queue.put(msg)
-        else:
+        if "B/s" not in msg and "B/s" in self.last_msg:
+            self.stream.write(self.last_msg + "\n")
+            self.stream.flush()
+
+        if "B/s" not in msg:
             super().emit(record)
 
         self.last_msg = msg
-
-    def process_queue(self):
-        """Process logging queue in a separate thread."""
-        while True:
-            msg = self.queue.get()
-            if msg is None:
-                break
-            self.write_to_console(msg)
-
-    def write_to_console(self, msg: str):
-        """Write progress updates to stdout asynchronously."""
-        with self.console_manager as cm:
-            cm.restore_position()
-
-            self.stream.write(f"\033[A\033[K{msg}\n")
-            self.stream.flush()
-
-            cm.save_position()
-
-    def close(self):
-        """Stop logging thread and close handler."""
-        self.queue.put(None)
-        self.thread.join()
-        super().close()
-
-
-class ConsoleManager:
-    """Save and restore cursor positions in the terminal."""
-
-    def __init__(self, stream: TextIO | Any = sys.__stdout__):
-        self.stream = stream
-        self.lock = thread_lock
-        self.saved_positions: list[tuple[int, int]] = []
-        self.original_position = None
-
-    def getch(self):
-        """Read a single character from stdin without waiting for Enter."""
-        if os.name == "nt":
-            return msvcrt.getch().decode("utf-8")
-        else:
-            fd = sys.stdin.fileno()
-            old = termios.tcgetattr(fd)
-            try:
-                tty.setraw(fd)
-                ch = sys.stdin.read(1)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old)
-            return ch
-
-    def get_cursor_position(self):
-        """Get the current cursor position."""
-        self.stream.write("\033[6n")
-        self.stream.flush()
-
-        response = ""
-        while True:
-            char = self.getch()
-            response += char
-            if char == "R":
-                break
-        try:
-            y, x = map(int, response[2:-1].split(";"))
-            return y, x
-        except ValueError:
-            return None
-
-    def save_position(self):
-        """Save the current cursor position."""
-        if self.lock:
-            self.lock.acquire()
-        try:
-            position = self.get_cursor_position()
-            if position:
-                self.saved_positions.append(position)
-        finally:
-            if self.lock:
-                self.lock.release()
-
-    def restore_position(self):
-        """Restore the last saved cursor position."""
-        if self.lock:
-            self.lock.acquire()
-        try:
-            if self.saved_positions:
-                y, x = self.saved_positions.pop()
-                self.stream.write(f"\033[{y};{x}H")
-                self.stream.flush()
-        finally:
-            if self.lock:
-                self.lock.release()
-
-    def __enter__(self):
-        """Save the original position when entering the context."""
-        if self.lock:
-            self.lock.acquire()
-        try:
-            self.original_position = self.get_cursor_position()
-            return self
-        finally:
-            if self.lock:
-                self.lock.release()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Restore the original position when exiting the context."""
-        if self.lock:
-            self.lock.acquire()
-        try:
-            if self.original_position:
-                y, x = self.original_position
-                self.stream.write(f"\033[{y};{x}H")
-                self.stream.flush()
-        finally:
-            if self.lock:
-                self.lock.release()
 
 
 class FileProgress(logging.FileHandler):
@@ -473,8 +330,7 @@ class FileProgress(logging.FileHandler):
 
     def __init__(self, filename=LOG_FILE, mode="a", encoding="utf-8", delay=False):
         super().__init__(filename, mode, encoding, delay)
-        self.logger = logging.getLogger("LoggerWriter")
-        self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        self.formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
         self.last_msg = ""
         self.last_pos = 0
         self.queue = queue.Queue()
@@ -502,24 +358,16 @@ class FileProgress(logging.FileHandler):
 
     def write_to_file(self, msg: str):
         """Write download progress to the log file asynchronously."""
-        mmapped_file = None
-        try:
-            with open(self.baseFilename, "r+b") as f:
-                mmapped_file = mmap(f.fileno(), 0)
-                self.overwrite_last_line(mmapped_file, msg)
-        except Exception as e:
-            self.logger.debug(f"Exception: {type(e).__name__}: {e}")
-        finally:
-            if mmapped_file:
-                mmapped_file.close()
+        with open(self.baseFilename, "r+b") as file:
+            with mmap(file.fileno(), 0, access=ACCESS_WRITE) as mm:
+                self.overwrite_last_line(mm, msg)
 
-    def overwrite_last_line(self, mmapped_file: mmap, msg: str):
+    def overwrite_last_line(self, mmap: mmap, msg: str):
         """Overwrite line from last saved position in memory-mapped file."""
         if self.last_pos == 0:
-            last_npos = mmapped_file.rfind(b"\n")
-            self.last_pos = mmapped_file.rfind(b"\n", 0, last_npos) + 1
+            self.last_pos = mmap.rfind(b"\n", 0, mmap.rfind(b"\n")) + 1
 
-        mmapped_file.seek(self.last_pos)
+        mmap.seek(self.last_pos)
 
         new_msg = msg.encode("utf-8")
         new_msg_length = len(new_msg)
@@ -527,14 +375,14 @@ class FileProgress(logging.FileHandler):
 
         new_size = self.last_pos + new_msg_length + 1
         if new_size > os.path.getsize(self.baseFilename):
-            mmapped_file.resize(new_size)
+            mmap.resize(new_size)
 
         padding = b""
         if new_msg_length < last_msg_length:
             padding = b" " * (last_msg_length - new_msg_length)
 
-        mmapped_file.write(new_msg + padding + b"\n")
-        mmapped_file.flush()
+        mmap.write(new_msg + padding + b"\n")
+        mmap.flush()
 
     def close(self):
         """Stop logging thread and close handler."""
@@ -545,30 +393,21 @@ class FileProgress(logging.FileHandler):
 
 async def read_previous_line(file_path: str, last_position: int):
     """Return the previous line of a file or from a given position."""
-    async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
-        previous_line = ""
-        found_last_line = False
+    with open(file_path, "rb") as file:
+        with mmap(file.fileno(), 0, access=ACCESS_READ) as mm:
+            previous_line = ""
 
-        if last_position == 0:
-            position = await file.seek(0, os.SEEK_END)
-            if position == 0:
-                return previous_line, position
+            if last_position == 0:
+                position = mm.rfind(b"\n", 0, mm.rfind(b"\n")) + 1
+                if position == 0:
+                    return previous_line, position
+            else:
+                position = last_position
 
-            while position > 0:
-                await file.seek(position - 1)
-                char = await file.read(1)
-                if char == "\n":
-                    if found_last_line:
-                        previous_line = await file.readline()
-                        break
-                    else:
-                        found_last_line = True
-                position -= 1
-        else:
-            position = await file.seek(last_position)
-            previous_line = await file.readline()
+            next_line = mm.find(b"\n", position) + 1
+            previous_line = mm[position:next_line].decode("utf-8")
 
-        return previous_line, position
+    return previous_line, position
 
 
 class StringLogger:
@@ -727,7 +566,7 @@ class BasicHandler(logging.Handler):
 
     def __init__(self):
         super().__init__()
-        self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        self.formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
 
     def emit(self, record):
         sys.stdout.write(self.format(record) + "\n")
