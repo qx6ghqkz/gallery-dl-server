@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import multiprocessing
-
 import uvicorn
 
 from . import options
@@ -14,8 +12,6 @@ def main(
     """Main entry point for gallery-dl-server."""
     if args is None:
         args = options.parse_args(module_name)
-
-    multiprocessing.freeze_support()
 
     from . import server
 
