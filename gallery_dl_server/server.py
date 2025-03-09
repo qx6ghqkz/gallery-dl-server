@@ -10,7 +10,6 @@ import time
 
 from contextlib import asynccontextmanager
 from multiprocessing.queues import Queue
-from multiprocessing.synchronize import Lock
 from types import FrameType
 from typing import Any
 
@@ -47,10 +46,7 @@ log_file = output.LOG_FILE
 last_line = ""
 last_position = 0
 
-async_lock = output.async_lock
-process_lock: Lock | None = multiprocessing.Lock()
-
-log = output.initialise_logging(__name__, lock=process_lock)
+log = output.initialise_logging(__name__)
 
 
 async def redirect(request: Request):
@@ -114,7 +110,7 @@ def download_task(url: str, request_options: dict[str, str]):
     log_queue: Queue[dict[str, Any]] = multiprocessing.Queue()
     return_status: Queue[int] = multiprocessing.Queue()
 
-    args = (url, request_options, log_queue, return_status, custom_args, process_lock)
+    args = (url, request_options, log_queue, return_status, custom_args)
 
     process = multiprocessing.Process(target=download.start, args=args)
     process.start()
@@ -261,35 +257,27 @@ async def log_update(websocket: WebSocket):
                 rust_timeout=100,
                 yield_on_timeout=True,
             ):
-                if async_lock:
-                    await async_lock.acquire()
-                try:
-                    new_content = ""
-                    do_update_state = False
+                new_content = ""
+                do_update_state = False
 
-                    previous_line, position = await output.read_previous_line(
-                        log_file, last_position
-                    )
-                    if "B/s" in previous_line and previous_line != last_line:
-                        new_content = previous_line
-                        do_update_state = True
+                previous_line, position = await output.read_previous_line(log_file, last_position)
+                if "B/s" in previous_line and previous_line != last_line:
+                    new_content = previous_line
+                    do_update_state = True
 
-                    new_lines = await file.read()
-                    if new_lines.strip():
-                        new_content += new_lines
+                new_lines = await file.read()
+                if new_lines.strip():
+                    new_content += new_lines
 
-                    if new_content.strip():
-                        await websocket.send_text(new_content)
+                if new_content.strip():
+                    await websocket.send_text(new_content)
 
-                        if do_update_state:
-                            last_line = previous_line
-                            last_position = position
-                        else:
-                            last_line = ""
-                            last_position = 0
-                finally:
-                    if async_lock:
-                        async_lock.release()
+                    if do_update_state:
+                        last_line = previous_line
+                        last_position = position
+                    else:
+                        last_line = ""
+                        last_position = 0
     except asyncio.CancelledError as e:
         log.debug(f"Exception: {type(e).__name__}")
     except WebSocketDisconnect as e:

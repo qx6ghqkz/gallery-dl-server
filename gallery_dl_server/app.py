@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import multiprocessing
-import os
 
 import uvicorn
 
 from . import options
 
 
-def main(args: options.CustomNamespace | None = None, module_name: str | None = None):
+def main(
+    args: options.CustomNamespace | None = None,
+    module_name: str | None = None,
+):
     """Main entry point for gallery-dl-server."""
     if args is None:
         args = options.parse_args(module_name)
@@ -23,8 +25,6 @@ def main(args: options.CustomNamespace | None = None, module_name: str | None = 
         "port": args.port,
         "log_level": args.log_level,
         "access_log": args.access_log,
-        "proxy_headers": os.environ.get("PROXY_HEADERS", "true").lower() == "true",
-        "forwarded_allow_ips": os.environ.get("FORWARDED_ALLOW_IPS", "*"),
     }
 
     uvicorn_config = uvicorn.Config(**kwargs)
