@@ -19,7 +19,7 @@ def main(
         "app": server.app,
         "host": args.host,
         "port": args.port,
-        "log_level": args.log_level,
+        "log_level": args.server_log_level,
         "access_log": args.access_log,
     }
 

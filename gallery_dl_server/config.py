@@ -79,9 +79,11 @@ def load(_configs: list[str]):
 
     for path in _configs:
         normal_path = utils.normalise_path(path)
+
         if os.path.isfile(normal_path):
             configs_found.append(normal_path)
             log.info(f"Configuration file found: {normal_path}")
+
             try:
                 load_config(path, exit_codes, messages)
                 configs_loaded.append(path)
@@ -93,7 +95,11 @@ def load(_configs: list[str]):
     log_results(_configs, configs_loaded, configs_found, exit_codes, messages)
 
 
-def load_config(path: str, exit_codes: list[int | str | None], messages: list[str]):
+def load_config(
+    path: str,
+    exit_codes: list[int | str | None],
+    messages: list[str],
+):
     """Load a single configuration file based on its extension."""
     if path.endswith((".conf", ".json")):
         config.load([path], strict=True)
@@ -155,8 +161,12 @@ def log_results(
         raise SystemExit(1)
 
 
-def get(path: list[str], default: Any = None, conf: dict[str, Any] = _config):
-    """Get a value from a nested dictionary or return a default value."""
+def get(
+    path: list[str],
+    default: Any = None,
+    conf: dict[str, Any] = _config,
+):
+    """Get value from nested dict or return default."""
     if isinstance(path, (list, tuple)):
         try:
             for p in path:

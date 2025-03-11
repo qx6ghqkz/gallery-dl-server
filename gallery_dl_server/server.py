@@ -122,7 +122,7 @@ def download_task(url: str, request_options: dict[str, str]):
             record_dict = log_queue.get(timeout=1)
             record = output.dict_to_record(record_dict)
 
-            if record.levelno >= log.getEffectiveLevel():
+            if record.levelno >= output.LOG_LEVEL_MIN:
                 log.handle(record)
 
             if "Video should already be available" in record.getMessage():
@@ -294,8 +294,11 @@ async def log_update(websocket: WebSocket):
 @asynccontextmanager
 async def lifespan(app: Starlette):
     """Run server startup and shutdown tasks."""
-    uvicorn_log = output.configure_uvicorn_logs()
+    output.configure_default_loggers()
+
+    uvicorn_log = output.get_logger("uvicorn")
     uvicorn_log.info(f"Starting {type(app).__name__} application.")
+
     await shutdown_override()
     try:
         yield

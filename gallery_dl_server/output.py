@@ -23,18 +23,21 @@ args = options.custom_args
 
 if args is not None:
     log_dir = args.log_dir
-    log_level = args.log_level.upper()
+    log_level: int = getattr(logging, args.log_level.upper())
+    server_log_level = args.server_log_level.upper()
     access_log = args.access_log
 
-    if args.log_level == "trace":
-        log_level = "DEBUG"
+    if args.server_log_level == "trace":
+        server_log_level = "DEBUG"
 else:
     log_dir = os.path.expanduser("~")
-    log_level = "INFO"
+    log_level = logging.INFO
+    server_log_level = "INFO"
     access_log = False
 
 LOG_FILE = utils.get_log_file_path(log_dir, "app.log")
-LOG_LEVEL: int = getattr(logging, log_level, logging.INFO)
+LOG_LEVEL: int = getattr(logging, server_log_level)
+LOG_LEVEL_MIN = min(log_level, LOG_LEVEL)
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s [%(name)s] [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s"
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
@@ -143,7 +146,7 @@ def get_blank_logger(name="blank", stream=sys.stdout, level=logging.INFO):
     return logger
 
 
-def setup_logging(level=LOG_LEVEL):
+def setup_logging(level=log_level):
     """Set up gallery-dl logging."""
     logger = output.initialize_logging(level)
 
@@ -477,15 +480,16 @@ def join(_list: list[str]):
     return ", ".join(formatted_list)
 
 
-def configure_uvicorn_logs():
-    """Configure uvicorn logging behaviour."""
-    main = logging.getLogger("uvicorn")
-    error = logging.getLogger("uvicorn.error")
+def configure_default_loggers(is_main_process=True, level=LOG_LEVEL):
+    """Configure default logging behaviour."""
+    asyncio_log = logging.getLogger("asyncio")
+    asyncio_log.setLevel(level)
 
-    if not access_log:
-        error.addFilter(WebSocketFilter())
+    if is_main_process:
+        uvicorn_error = logging.getLogger("uvicorn.error")
 
-    return main
+        if not access_log:
+            uvicorn_error.addFilter(WebSocketFilter())
 
 
 class WebSocketFilter(logging.Filter):

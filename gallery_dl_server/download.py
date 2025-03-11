@@ -21,6 +21,8 @@ def start(
 
     from . import config, output
 
+    output.configure_default_loggers(is_main_process=False)
+
     log = output.initialise_logging(__name__)
 
     def run(

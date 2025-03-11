@@ -26,6 +26,7 @@ def run(
     port: int = 0,
     log_dir: str = "~",
     log_level: str = "info",
+    server_log_level: str = "info",
     access_log: bool = False,
 ) -> None:
     """
@@ -41,7 +42,10 @@ def run(
         log_dir (str): The directory for the log file
             (defaults to the user's home directory on the operating system).
 
-        log_level (str): The log level
+        log_level (str): The log level for downloads
+            (accepted values: `critical`, `error`, `warning`, `info`, `debug`).
+
+        server_log_level (str): The log level for the server
             (accepted values: `critical`, `error`, `warning`, `info`, `debug`, `trace`).
 
         access_log (bool): Enable or disable the access log only, without changing the log level
@@ -57,7 +61,7 @@ def run(
         import gallery_dl_server as server
 
         if __name__ == "__main__":
-            server.run(host="127.0.0.1", port=9080, log_level="info", access_log=False)
+            server.run(host="127.0.0.1", port=9080, server_log_level="info", access_log=False)
         ```
 
         To run the server on all interfaces with a random port and enable access logging:
@@ -66,7 +70,7 @@ def run(
         import gallery_dl_server as server
 
         if __name__ == "__main__":
-            server.run(host="0.0.0.0", port=0, log_level="debug", access_log=True)
+            server.run(host="0.0.0.0", port=0, server_log_level="debug", access_log=True)
         ```
 
         The `if __name__ == "__main__"` guard is necessary on Windows to prevent the server from
@@ -87,6 +91,7 @@ def run(
         "port": port,
         "log_dir": utils.normalise_path(log_dir),
         "log_level": log_level.lower(),
+        "server_log_level": server_log_level.lower(),
         "access_log": access_log,
     }
 

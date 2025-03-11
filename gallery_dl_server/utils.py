@@ -28,16 +28,18 @@ def resource_path(relative_path: str):
 
 def get_log_file_path(log_dir: str, filename: str):
     """Get log file path depending on whether the package is installed."""
-    installed_name = "gallery-dl-server"
+    is_installed = is_package_installed("gallery-dl-server")
 
-    if is_package_installed(installed_name):
-        filename = installed_name + ".log"
-    else:
-        log_dir = os.path.join(os.getcwd(), "logs")
+    if log_dir or is_installed:
+        filename = "gallery-dl-server.log"
 
-    log_path = os.path.join(log_dir, filename)
+    if not log_dir:
+        if is_installed:
+            log_dir = os.path.expanduser("~")
+        else:
+            log_dir = os.path.join(os.getcwd(), "logs")
 
-    return log_path
+    return os.path.join(log_dir, filename)
 
 
 def dirname_parent(path: str):
@@ -72,7 +74,11 @@ def is_package_installed(installed_name: str):
 def normalise_path(path: str):
     """Expands user constructions and environment variables in the given path,
     normalises it, and returns the absolute path."""
-    return os.path.abspath(os.path.normpath(os.path.expandvars(os.path.expanduser(path))))
+    return (
+        os.path.abspath(os.path.normpath(os.path.expandvars(os.path.expanduser(path))))
+        if path
+        else path
+    )
 
 
 def is_imported(module_name: str):
