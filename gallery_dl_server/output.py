@@ -396,10 +396,14 @@ class FileProgress(logging.FileHandler):
 
 async def read_previous_line(file_path: str, last_position: int):
     """Return the previous line of a file or from a given position."""
+    previous_line = ""
+    position = 0
+
+    if os.path.getsize(file_path) == 0:
+        return previous_line, position
+
     with open(file_path, "rb") as file:
         with mmap(file.fileno(), 0, access=ACCESS_READ) as mm:
-            previous_line = ""
-
             if last_position == 0:
                 position = mm.rfind(b"\n", 0, mm.rfind(b"\n")) + 1
                 if position == 0:
