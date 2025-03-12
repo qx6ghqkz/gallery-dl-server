@@ -68,11 +68,10 @@ def load(_configs: list[str]):
     """Load configuration files."""
     configs_found: list[str] = []
     configs_loaded: list[str] = []
-
     exit_codes: list[int | str | None] = []
     messages: list[str] = []
 
-    new_exts = [".yaml", ".yml", ".toml"]
+    new_exts = [".toml", ".yaml", ".yml"]
     _configs = get_new_configs(_configs if utils.CONTAINER else get_default_configs(), new_exts)
 
     log_buffer = output.StringLogger()
@@ -85,8 +84,11 @@ def load(_configs: list[str]):
             log.info(f"Configuration file found: {normal_path}")
 
             try:
-                load_config(path, exit_codes, messages)
+                load_config(path, exit_codes)
                 configs_loaded.append(path)
+            except ImportError as e:
+                messages.append(f"{type(e).__name__}: {e}")
+                continue
             except SystemExit as e:
                 exit_codes.append(e.code)
                 messages.append(log_buffer.get_logs().split(output.LOG_SEPARATOR)[-1])
@@ -95,20 +97,16 @@ def load(_configs: list[str]):
     log_results(_configs, configs_loaded, configs_found, exit_codes, messages)
 
 
-def load_config(
-    path: str,
-    exit_codes: list[int | str | None],
-    messages: list[str],
-):
+def load_config(path: str, exit_codes: list[int | str | None]):
     """Load a single configuration file based on its extension."""
     if path.endswith((".conf", ".json")):
         config.load([path], strict=True)
     elif path.endswith((".yaml", ".yml")):
         try:
             import yaml
-        except ImportError as e:
+        except ImportError:
             exit_codes.append(3)
-            messages.append(f"{type(e).__name__}: {e}")
+            raise
 
         config.load([path], strict=True, loads=yaml.safe_load)
     elif path.endswith(".toml"):
@@ -117,9 +115,9 @@ def load_config(
         except ImportError:
             try:
                 import toml  # type: ignore
-            except ImportError as e:
+            except ImportError:
                 exit_codes.append(4)
-                messages.append(f"{type(e).__name__}: {e}")
+                raise
 
         config.load([path], strict=True, loads=toml.loads)
 

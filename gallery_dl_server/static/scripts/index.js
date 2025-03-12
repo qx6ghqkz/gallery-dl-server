@@ -210,7 +210,7 @@ function connectWebSocket(allowReconnect = true) {
   const url = `${protocol}${host}/ws/logs`;
 
   let lastLine = "";
-  let lastPos = 0;
+  let lastPos = localStorage.getItem("lastPos") ? parseInt(localStorage.getItem("lastPos")) : 0;
 
   ws = new WebSocket(url);
 
@@ -248,6 +248,8 @@ function connectWebSocket(allowReconnect = true) {
     lines.push(...newLines.slice(progressUpdate ? 1 : 0));
 
     box.textContent = lines.join("\n") + "\n";
+
+    localStorage.setItem("lastPos", lastPos);
 
     if (!progressUpdate || newLines.length > 1) {
       box.scrollTop = box.scrollHeight;

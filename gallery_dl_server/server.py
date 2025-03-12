@@ -112,7 +112,7 @@ def download_task(url: str, request_options: dict[str, str]):
 
     args = (url, request_options, log_queue, return_status, custom_args)
 
-    process = multiprocessing.Process(target=download.start, args=args)
+    process = multiprocessing.Process(target=download.run, args=args)
     process.start()
 
     while True:

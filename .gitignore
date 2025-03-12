@@ -23,6 +23,7 @@ drafts/
 gallery-dl/
 logs/
 tests/
+*.log
 *.pem
 
 # Build

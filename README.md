@@ -210,18 +210,20 @@ The server can be configured with numerous command-line arguments and environmen
 
 Use the arguments when running the server directly from the command line, and the environment variables for configuring the server inside running containers.
 
-| Command-Line Argument | Environment Variable | Docker Only | Type   | Expected Values                                     | Default Value | Description                        |
-|-----------------------|----------------------|-------------|--------|-----------------------------------------------------|---------------|------------------------------------|
-| `‑‑host`              | `HOST`               | &cross;     | `str`  | IP address or hostname                              | `0.0.0.0`     | Specify the host address           |
-| `‑‑port`              | `PORT`               | &cross;     | `int`  | `0–65535`                                           | `0`           | Specify the port to run the app    |
-| `‑‑log‑dir`           | `LOG_DIR`            | &cross;     | `str`  | An existing directory                               | `~`           | Set the log file directory         |
-| `‑‑log‑level`         | `LOG_LEVEL`          | &cross;     | `str`  | `critical` `error` `warning` `info` `debug`         | `info`        | Set the download log level         |
-| `‑‑server‑log‑level`  | `SERVER_LOG_LEVEL`   | &cross;     | `str`  | `critical` `error` `warning` `info` `debug` `trace` | `info`        | Set the server log level           |
-| `‑‑access‑log`        | `ACCESS_LOG`         | &cross;     | `bool` | `true` `false`                                      | `false`       | Enable the server access log       |
-| ‑                     | `CONTAINER_PORT`     | &check;     | `int`  | `0–65535`                                           | `9080`        | Set the internal container port    |
-| ‑                     | `UID`                | &check;     | `int`  | Any valid user ID                                   | `1000`        | User ID to run the server process  |
-| ‑                     | `GID`                | &check;     | `int`  | Any valid group ID                                  | `1000`        | Group ID to run the server process |
-| ‑                     | `UMASK`              | &check;     | `int`  | Any valid `umask` value                             | `002`         | Set `umask` for file permissions   |
+| Command-Line Argument | Environment Variable | Docker Only | Type   | Expected Values                                                    | Default Value | Description                        |
+|-----------------------|----------------------|-------------|--------|--------------------------------------------------------------------|---------------|------------------------------------|
+| `‑‑host`              | `HOST`               | &cross;     | `str`  | IP address or hostname                                             | `0.0.0.0`     | Specify the host address           |
+| `‑‑port`              | `PORT`               | &cross;     | `int`  | `0–65535`                                                          | `0`           | Specify the port to run the app    |
+|                       | `CONTAINER_PORT`     | &check;     | `int`  | `0–65535`                                                          | `9080`        | Set the internal container port    |
+| &mdash;               | `UID`                | &check;     | `int`  | Any valid user ID                                                  | `1000`        | User ID to run the server process  |
+| &mdash;               | `GID`                | &check;     | `int`  | Any valid group ID                                                 | `1000`        | Group ID to run the server process |
+| &mdash;               | `UMASK`              | &check;     | `int`  | Any valid `umask` value                                            | `002`         | Set `umask` for file permissions   |
+| `‑‑log‑dir`           | `LOG_DIR`            | &cross;     | `str`  | Any existing directory                                             | `~`           | Set the log file directory         |
+| `‑‑log‑level`         | `LOG_LEVEL`          | &cross;     | `str`  | `critical`<br>`error`<br>`warning`<br>`info`<br>`debug`            | `info`        | Set the download log level         |
+| `‑‑server‑log‑level`  | `SERVER_LOG_LEVEL`   | &cross;     | `str`  | `critical`<br>`error`<br>`warning`<br>`info`<br>`debug`<br>`trace` | `info`        | Set the server log level           |
+| `‑‑access‑log`        | `ACCESS_LOG`         | &cross;     | `bool` | `true`<br>`false`                                                  | `false`       | Enable the server access log       |
+
+Note: `CONTAINER_PORT` takes precedence over the `PORT` environment variable in Docker containers to set the port the server will run on internally. This value and `HOST` should not normally need to be changed from their default values for Docker running.
 
 ## Dependencies
 

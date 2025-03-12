@@ -23,21 +23,22 @@ args = options.custom_args
 
 if args is not None:
     log_dir = args.log_dir
-    log_level: int = getattr(logging, args.log_level.upper())
-    server_log_level = args.server_log_level.upper()
+    log_level = args.log_level
+    server_log_level = args.server_log_level
     access_log = args.access_log
 
-    if args.server_log_level == "trace":
-        server_log_level = "DEBUG"
+    if server_log_level == "trace":
+        server_log_level = "debug"
 else:
-    log_dir = os.path.expanduser("~")
-    log_level = logging.INFO
-    server_log_level = "INFO"
+    log_dir = ""
+    log_level = "info"
+    server_log_level = "info"
     access_log = False
 
 LOG_FILE = utils.get_log_file_path(log_dir, "app.log")
-LOG_LEVEL: int = getattr(logging, server_log_level)
-LOG_LEVEL_MIN = min(log_level, LOG_LEVEL)
+LOG_LEVEL: int = getattr(logging, server_log_level.upper())
+LOG_LEVEL_DL: int = getattr(logging, log_level.upper())
+LOG_LEVEL_MIN = min(LOG_LEVEL, LOG_LEVEL_DL)
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s [%(name)s] [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s"
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
@@ -146,7 +147,7 @@ def get_blank_logger(name="blank", stream=sys.stdout, level=logging.INFO):
     return logger
 
 
-def setup_logging(level=log_level):
+def setup_logging(level=LOG_LEVEL_DL):
     """Set up gallery-dl logging."""
     logger = output.initialize_logging(level)
 
@@ -338,6 +339,7 @@ class FileProgress(logging.FileHandler):
         self.last_pos = 0
         self.queue = queue.Queue()
         self.thread = threading.Thread(target=self.process_queue, daemon=True)
+        self.thread_lock = threading.Lock()
         self.thread.start()
 
     def emit(self, record):
@@ -347,7 +349,8 @@ class FileProgress(logging.FileHandler):
         if "B/s" in msg and "B/s" in self.last_msg:
             self.queue.put(msg)
         else:
-            super().emit(record)
+            with self.thread_lock:
+                super().emit(record)
 
         self.last_msg = msg
 
@@ -357,7 +360,8 @@ class FileProgress(logging.FileHandler):
             msg = self.queue.get()
             if msg is None:
                 break
-            self.write_to_file(msg)
+            with self.thread_lock:
+                self.write_to_file(msg)
 
     def write_to_file(self, msg: str):
         """Write download progress to the log file asynchronously."""
@@ -376,13 +380,13 @@ class FileProgress(logging.FileHandler):
         new_msg_length = len(new_msg)
         last_msg_length = len(self.last_msg.encode("utf-8"))
 
-        new_size = self.last_pos + new_msg_length + 1
-        if new_size > os.path.getsize(self.baseFilename):
-            mmap.resize(new_size)
-
         padding = b""
         if new_msg_length < last_msg_length:
             padding = b" " * (last_msg_length - new_msg_length)
+
+        new_size = self.last_pos + max(new_msg_length, last_msg_length) + 1
+        if new_size > mmap.size():
+            mmap.resize(new_size)
 
         mmap.write(new_msg + padding + b"\n")
         mmap.flush()
@@ -484,10 +488,10 @@ def join(_list: list[str]):
     return ", ".join(formatted_list)
 
 
-def configure_default_loggers(is_main_process=True, level=LOG_LEVEL):
+def configure_default_loggers(is_main_process=True):
     """Configure default logging behaviour."""
     asyncio_log = logging.getLogger("asyncio")
-    asyncio_log.setLevel(level)
+    asyncio_log.setLevel(logging.CRITICAL)
 
     if is_main_process:
         uvicorn_error = logging.getLogger("uvicorn.error")
