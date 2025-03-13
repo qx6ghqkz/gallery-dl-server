@@ -1,8 +1,12 @@
+# Visual Studio
+.vscode/
+
 # Cache
 __pycache__/
+.ruff_cache/
 
 # Scripts
-scripts/
+/scripts/
 *.bat
 *.cmd
 *.ps1
@@ -14,11 +18,16 @@ venv/
 .venv
 
 # Misc
+certs/
 drafts/
 gallery-dl/
 logs/
+tests/
+*.log
+*.pem
 
-# PyInstaller
+# Build
 build/
 dist/
+*.egg-info/
 *.spec

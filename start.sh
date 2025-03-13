@@ -14,6 +14,11 @@ get_ids () {
   GID="${GID:-$GID_OG}"
 }
 
+set_umask () {
+  UMASK="${UMASK:-002}"
+  umask "$UMASK"
+}
+
 mod_ids () {
   groupmod --non-unique --gid "$GID" appgroup >/dev/null 2>&1
   usermod --non-unique --gid "$GID" --uid "$UID" appuser >/dev/null 2>&1
@@ -44,10 +49,13 @@ init () {
 }
 
 log() {
+  local RESET="\033[0m"
+  local GREEN="\033[0;32m"
+
   if [[ $1 -eq 0 ]]; then
-    echo "INFO:     Starting process with UID=$UID and GID=$GID ($(getent passwd $UID | cut -d: -f1))"
+    echo -e "${GREEN}INFO:${RESET}     Starting process with UID=$UID and GID=$GID ($(getent passwd $UID | cut -d: -f1))"
   elif [[ $1 -eq 1 ]]; then
-    echo "INFO:     Starting process with UID=$(id -u) and GID=$(id -g) ($(id -u -n))"
+    echo -e "${GREEN}INFO:${RESET}     Starting process with UID=$(id -u) and GID=$(id -g) ($(id -u -n))"
   else
     exit 0
   fi
@@ -56,9 +64,9 @@ log() {
 start() {
   init_conf
   if [[ $1 -eq 0 ]]; then
-    exec su-exec appuser uvicorn gallery_dl_server:app --host "0.0.0.0" --port "$CONTAINER_PORT" --log-level "info" --no-access-log
+    exec script -q -c "exec su-exec appuser python3 -m gallery_dl_server --port $CONTAINER_PORT" /dev/null
   elif [[ $1 -eq 1 ]]; then
-    exec uvicorn gallery_dl_server:app --host "0.0.0.0" --port "$CONTAINER_PORT" --log-level "info" --no-access-log
+    exec script -q -c "exec python3 -m gallery_dl_server --port $CONTAINER_PORT" /dev/null
   else
     exit 0
   fi
@@ -109,6 +117,7 @@ exit() {
 
 check_etc
 get_ids
+set_umask
 if [[ "$UID" -ne "$UID_OG" || "$GID" -ne "$GID_OG" ]]; then
   if [[ "$(id -u -n 2>/dev/null)" == "root" ]]; then
     mod_ids

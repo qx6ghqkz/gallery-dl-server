@@ -1,23 +1,19 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import sys
-import logging
 
 from typing import Any
-
-import tomllib as toml
-import yaml
 
 from gallery_dl import config
 
 from . import output, utils
 
-
-log = output.initialise_logging(__name__)
-
 _config: dict[str, Any] = config._config
 _files: list[str] = config._files
+
+log = output.initialise_logging(__name__)
 
 
 def clear(conf: dict[str, Any] = _config):
@@ -54,9 +50,9 @@ def get_default_configs():
     return _default_configs
 
 
-def get_new_configs(_configs: list[str], exts: list[str]) -> list[str]:
+def get_new_configs(_configs: list[str], exts: list[str]):
     """Return list of original paths and paths with new extensions."""
-    _new_configs = []
+    _new_configs: list[str] = []
 
     for path in _configs:
         _new_configs.append(path)
@@ -70,54 +66,105 @@ def get_new_configs(_configs: list[str], exts: list[str]) -> list[str]:
 
 def load(_configs: list[str]):
     """Load configuration files."""
-    exit_codes = []
-    messages = []
-    loaded = 0
+    configs_found: list[str] = []
+    configs_loaded: list[str] = []
+    exit_codes: list[int | str | None] = []
+    messages: list[str] = []
 
-    new_exts = [".yaml", ".yml", ".toml"]
-
-    if utils.CONTAINER:
-        _configs = get_new_configs(_configs, new_exts)
-    else:
-        _configs = get_new_configs(get_default_configs(), new_exts)
+    new_exts = [".toml", ".yaml", ".yml"]
+    _configs = get_new_configs(_configs if utils.CONTAINER else get_default_configs(), new_exts)
 
     log_buffer = output.StringLogger()
 
     for path in _configs:
-        try:
-            if path.endswith((".conf", ".json")):
-                config.load([path], strict=True)
-            if path.endswith((".yaml", ".yml")):
-                config.load([path], strict=True, loads=yaml.safe_load)
-            if path.endswith(".toml"):
-                config.load([path], strict=True, loads=toml.loads)
-        except SystemExit as e:
-            exit_codes.append(e.code)
-            if e.code == 2:
+        normal_path = utils.normalise_path(path)
+
+        if os.path.isfile(normal_path):
+            configs_found.append(normal_path)
+            log.info(f"Configuration file found: {normal_path}")
+
+            try:
+                load_config(path, exit_codes)
+                configs_loaded.append(path)
+            except ImportError as e:
+                messages.append(f"{type(e).__name__}: {e}")
+                continue
+            except SystemExit as e:
+                exit_codes.append(e.code)
                 messages.append(log_buffer.get_logs().split(output.LOG_SEPARATOR)[-1])
-        else:
-            loaded += 1
 
     log_buffer.close()
+    log_results(_configs, configs_loaded, configs_found, exit_codes, messages)
 
-    if loaded > 0:
+
+def load_config(path: str, exit_codes: list[int | str | None]):
+    """Load a single configuration file based on its extension."""
+    if path.endswith((".conf", ".json")):
+        config.load([path], strict=True)
+    elif path.endswith((".yaml", ".yml")):
+        try:
+            import yaml
+        except ImportError:
+            exit_codes.append(3)
+            raise
+
+        config.load([path], strict=True, loads=yaml.safe_load)
+    elif path.endswith(".toml"):
+        try:
+            import tomllib as toml
+        except ImportError:
+            try:
+                import toml  # type: ignore
+            except ImportError:
+                exit_codes.append(4)
+                raise
+
+        config.load([path], strict=True, loads=toml.loads)
+
+
+def log_results(
+    _configs: list[str],
+    configs_loaded: list[str],
+    configs_found: list[str],
+    exit_codes: list[int | str | None],
+    messages: list[str],
+):
+    """Log and handle the results of loading configuration files."""
+    if configs_loaded:
         log.info(f"Loaded gallery-dl configuration file(s): [{output.join(_files)}]")
-    else:
-        if 2 not in exit_codes:
-            log.error("Loading configuration files failed with exit code: 1")
+    elif all(code not in exit_codes for code in [2, 3, 4]):
+        log.error("Loading configuration files failed with exit code: 1")
+
+        if not configs_found:
             log.info(f"Valid configuration file locations: [{output.join(_configs)}]")
-        else:
-            log.error("Loading configuration files failed with exit code: 2")
+    elif all(code not in exit_codes for code in [3, 4]):
+        log.error("Loading configuration files failed with exit code: 2")
+    elif 2 not in exit_codes:
+        log.error("Loading configuration files failed due to missing imports")
 
     for message in messages:
         log.log_multiline(logging.ERROR, message)
 
-    if loaded == 0:
+    if exit_codes:
+        if 3 in exit_codes:
+            log.info("Install 'PyYAML' to load YAML configuration files")
+        if 4 in exit_codes:
+            log.info("Install 'toml' or use Python >= 3.11 to load TOML configuration files")
+
+        unique_exit_codes = sorted(set(utils.filter_integers(exit_codes)))
+        if unique_exit_codes:
+            log.debug(f"Exit codes: {unique_exit_codes}")
+
+    if not configs_loaded:
         raise SystemExit(1)
 
 
-def get(path: list[str], default: Any = None, conf: dict[str, Any] = _config):
-    """Get a value from a nested dictionary or return a default value."""
+def get(
+    path: list[str],
+    default: Any = None,
+    conf: dict[str, Any] = _config,
+):
+    """Get value from nested dict or return default."""
     if isinstance(path, (list, tuple)):
         try:
             for p in path:
@@ -128,7 +175,10 @@ def get(path: list[str], default: Any = None, conf: dict[str, Any] = _config):
 
 
 def add(
-    _dict: dict[str, Any] | None = None, conf: dict[str, Any] = _config, fixed=False, **kwargs: Any
+    _dict: dict[str, Any] | None = None,
+    conf: dict[str, Any] = _config,
+    fixed=False,
+    **kwargs: Any,
 ):
     """Add entries to a nested dictionary or list."""
     if _dict:
@@ -158,14 +208,17 @@ def add(
                 elif isinstance(v, dict):
                     conf[k] = add(conf=v, fixed=fixed, **{key: val})[0]
 
-    return (conf, [_dict] if not kwargs else [kwargs] if not _dict else [_dict, kwargs])
+    return conf, [_dict] if not kwargs else [kwargs] if not _dict else [_dict, kwargs]
 
 
 def remove(
-    path: dict[str, Any] | list, item: str | None = None, key: str | None = None, value: Any = None
+    path: dict[str, Any] | list[Any],
+    item: str | None = None,
+    key: str | None = None,
+    value: Any = None,
 ):
     """Remove entries from a nested dictionary or list."""
-    entries_removed = []
+    entries_removed: list[Any] = []
 
     if isinstance(path, dict) and key:
         entries_removed.extend(remove_from_dict(path, key, value))
@@ -177,13 +230,13 @@ def remove(
 
 def remove_from_dict(_dict: dict[str, Any], key: str, value: Any):
     """Remove keys from a nested dictionary."""
-    keys_to_remove = []
+    keys_to_remove: list[str] = []
+    keys_removed: list[dict[str, Any]] = []
 
     for k, v in _dict.items():
         if k == key and (value is None or v == value):
             keys_to_remove.append(k)
 
-    keys_removed = []
     for k in keys_to_remove:
         try:
             v = _dict.pop(k)
@@ -194,9 +247,10 @@ def remove_from_dict(_dict: dict[str, Any], key: str, value: Any):
     return keys_removed
 
 
-def remove_from_list(_list: list, item: str | None, key: str | None, value: Any):
+def remove_from_list(_list: list[Any], item: str | None, key: str | None, value: Any):
     """Remove elements from a nested list."""
-    elements_to_remove = []
+    elements_to_remove: list[Any] = []
+    elements_removed: list[Any] = []
 
     for element in _list:
         if isinstance(element, dict):
@@ -214,7 +268,6 @@ def remove_from_list(_list: list, item: str | None, key: str | None, value: Any)
                 if value == "any":
                     elements_to_remove.append(element)
 
-    elements_removed = []
     for element in elements_to_remove:
         try:
             _list.remove(element)

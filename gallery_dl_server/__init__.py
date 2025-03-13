@@ -1,174 +1,102 @@
 # -*- coding: utf-8 -*-
 
-import os
-import multiprocessing
-import queue
-import shutil
-import time
+"""
+gallery-dl-server: Web UI for downloading media with gallery-dl and yt-dlp.
 
-from contextlib import asynccontextmanager
+This package serves as a middleware for gallery-dl and yt-dlp, providing a simple
+web and REST interface for downloading media from various websites.
+"""
 
-from starlette.applications import Starlette
-from starlette.background import BackgroundTask
-from starlette.datastructures import UploadFile
-from starlette.responses import RedirectResponse, JSONResponse, StreamingResponse
-from starlette.requests import Request
-from starlette.routing import Route, Mount
-from starlette.staticfiles import StaticFiles
-from starlette.status import HTTP_303_SEE_OTHER
-from starlette.templating import Jinja2Templates
+import sys
 
-import aiofiles
-import gallery_dl.version
-import yt_dlp.version
-
-from . import download, output, utils, version
-
-
-log_file = output.LOG_FILE
-
-log = output.initialise_logging(__name__)
-blank = output.get_blank_logger()
-
-blank_sent = False
-
-
-async def redirect(request: Request):
-    return RedirectResponse(url="/gallery-dl")
-
-
-async def homepage(request: Request):
-    return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "app_version": version.__version__,
-            "gallery_dl_version": gallery_dl.version.__version__,
-            "yt_dlp_version": yt_dlp.version.__version__,
-        },
+if sys.version_info < (3, 10):
+    raise ImportError(
+        "You are using an unsupported version of Python. "
+        "Please upgrade to Python 3.10 or above to use gallery-dl-server."
     )
 
+from . import app, options, utils, version
 
-async def submit_form(request: Request):
-    global blank_sent
-
-    if not blank_sent:
-        blank.info("")
-        blank_sent = True
-
-    form_data = await request.form()
-
-    url = form_data.get("url")
-    ui = form_data.get("ui")
-    video_opts = form_data.get("video-opts")
-
-    data = [url, ui, video_opts]
-    data = [None if isinstance(value, UploadFile) else value for value in data]
-
-    url, ui, video_opts = data
-
-    if not video_opts:
-        video_opts = "none-selected"
-
-    options = {"video-options": video_opts}
-
-    if not url:
-        log.error("No URL provided.")
-
-        if not ui:
-            return JSONResponse(
-                {"success": False, "error": "/q called without a 'url' in form data"}
-            )
-
-        return RedirectResponse(url="/gallery-dl", status_code=HTTP_303_SEE_OTHER)
-
-    task = BackgroundTask(download_task, url.strip(), options)
-
-    log.info("Added URL to the download queue: %s", url)
-
-    if not ui:
-        return JSONResponse({"success": True, "url": url, "options": options}, background=task)
-
-    return RedirectResponse(
-        url="/gallery-dl?added=" + url, status_code=HTTP_303_SEE_OTHER, background=task
-    )
+__version__ = version.__version__
+__all__ = ["run"]
 
 
-async def log_route(request: Request):
-    async def file_iterator(file_path: str):
-        async with aiofiles.open(file_path, mode="r", encoding="utf-8") as file:
-            while True:
-                chunk = await file.read(64 * 1024)
-                if not chunk:
-                    break
-                yield chunk
+def run(
+    host: str = "0.0.0.0",
+    port: int = 0,
+    log_dir: str = "~",
+    log_level: str = "info",
+    server_log_level: str = "info",
+    access_log: bool = False,
+) -> None:
+    """
+    Run gallery-dl-server with custom options.
 
-    return StreamingResponse(file_iterator(log_file), media_type="text/plain")
+    Args:
+        host (str): The host address for the server
+            (`0.0.0.0` listens on all available interfaces, allowing access from any IP address).
 
+        port (int): The port number for the server
+            (`0` selects a random port).
 
-@asynccontextmanager
-async def lifespan(app: Starlette):
-    uvicorn_log = output.get_logger("uvicorn")
-    uvicorn_log.info(f"Starting {type(app).__name__} application.")
-    yield
-    if utils.CONTAINER and os.path.isdir("/config"):
-        if os.path.isfile(log_file) and os.path.getsize(log_file) > 0:
-            dst_dir = "/config/logs"
+        log_dir (str): The directory for the log file
+            (defaults to the user's home directory on the operating system).
 
-            os.makedirs(dst_dir, exist_ok=True)
+        log_level (str): The log level for downloads
+            (accepted values: `critical`, `error`, `warning`, `info`, `debug`).
 
-            dst = os.path.join(dst_dir, "app_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".log")
-            shutil.copy2(log_file, dst)
+        server_log_level (str): The log level for the server
+            (accepted values: `critical`, `error`, `warning`, `info`, `debug`, `trace`).
 
+        access_log (bool): Enable or disable the access log only, without changing the log level
+            (i.e. show `GET` requests, WebSocket connections, etc.).
 
-def download_task(url: str, options: dict[str, str]):
-    """Initiate download as a subprocess and log output."""
-    log_queue = multiprocessing.Queue()
-    return_status = multiprocessing.Queue()
+    Raises:
+        TypeError: If an invalid parameter is passed to the function, it will raise a `TypeError`.
 
-    process = multiprocessing.Process(
-        target=download.run, args=(url, options, log_queue, return_status)
-    )
-    process.start()
+    Examples:
+        To run the server on `localhost` with a specific port:
 
-    while True:
-        if log_queue.empty() and not process.is_alive():
-            break
+        ```python
+        import gallery_dl_server as server
 
-        try:
-            record_dict = log_queue.get(timeout=1)
-            record = output.dict_to_record(record_dict)
+        if __name__ == "__main__":
+            server.run(host="127.0.0.1", port=9080, server_log_level="info", access_log=False)
+        ```
 
-            if record.levelno >= log.getEffectiveLevel():
-                log.handle(record)
+        To run the server on all interfaces with a random port and enable access logging:
 
-            if "Video should already be available" in record.getMessage():
-                log.warning("Terminating process as video is not available")
-                process.kill()
-        except queue.Empty:
-            continue
+        ```python
+        import gallery_dl_server as server
 
-    process.join()
+        if __name__ == "__main__":
+            server.run(host="0.0.0.0", port=0, server_log_level="debug", access_log=True)
+        ```
+
+        The `if __name__ == "__main__"` guard is necessary on Windows to prevent the server from
+        starting itself recursively when attempting to initiate a download.
+
+        This is because the server runs each download in a child process using the
+        `multiprocessing` module, which uses `spawn` as the default start method on Windows.
+
+        The `spawn` method creates a new Python interpreter which imports the main module,
+        causing any unguarded code to be executed again in the child process.
+
+        See the following:
+        - https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+        - https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods
+    """
+    kwargs = {
+        "host": host,
+        "port": port,
+        "log_dir": utils.normalise_path(log_dir),
+        "log_level": log_level.lower(),
+        "server_log_level": server_log_level.lower(),
+        "access_log": access_log,
+    }
 
     try:
-        exit_code = return_status.get(block=False)
-    except queue.Empty:
-        exit_code = process.exitcode
-
-    if exit_code == 0:
-        log.info("Download job completed with exit code: 0")
-    else:
-        log.error("Download job failed with exit code: %s", exit_code)
-
-
-templates = Jinja2Templates(directory=utils.resource_path("templates"))
-
-routes = [
-    Route("/", endpoint=redirect, methods=["GET"]),
-    Route("/gallery-dl", endpoint=homepage, methods=["GET"]),
-    Route("/gallery-dl/q", endpoint=submit_form, methods=["POST"]),
-    Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
-    Mount("/icons", app=StaticFiles(directory=utils.resource_path("icons")), name="icons"),
-]
-
-app = Starlette(debug=True, routes=routes, lifespan=lifespan)
+        args = options.custom_args = options.CustomNamespace(**kwargs)
+        app.main(args)
+    except TypeError:
+        raise

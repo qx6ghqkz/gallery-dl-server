@@ -1,0 +1,102 @@
+html, body {
+  background-color: #4a045a;
+}
+
+h1, a {
+  white-space: nowrap;
+}
+
+#swal2-html-container > a {
+  color: #d000ff;
+}
+
+#swal2-html-container > a:hover, .swal2-close:hover {
+  color: #b200e1;
+}
+
+.swal2-close {
+  color: #550572;
+}
+
+.swal2-timer-progress-bar {
+  background-color: #550572;
+}
+
+.swal2-success > div {
+  background-color: transparent !important;
+}
+
+body a:not(header a) {
+  color: white;
+  transition: color 0.2s ease;
+}
+
+body a:not(header a):hover {
+  color: #d000ff;
+}
+
+div.input-group > input,
+div.input-group > select.form-select {
+  outline: none;
+  transition: border-color 0.2s linear, box-shadow 0.2s linear;
+}
+
+div.input-group > input:focus,
+div.input-group > select.form-select:focus {
+  border-color: #d000ff;
+  box-shadow: 0 0 5px #d000ff;
+}
+
+div.input-group > select.form-select {
+  flex: 0.1 1 100px;
+  max-width: 30%;
+  text-overflow: ellipsis;
+}
+
+select optgroup{
+  font-style: normal;
+}
+
+#button-submit {
+  border-color: #dee2e6;
+}
+
+#button-submit:hover {
+  border-color: #9200b3;
+}
+
+#box {
+  resize: vertical;
+  overflow-y: auto;
+  min-height: 20.81vh;
+  max-height: 88.80vh;
+  height: 26.62vh;
+  width: 90%;
+  color: #dee2e6;
+  background-color: #181a1b;
+  border: 1px solid #333333;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 16px;
+  scrollbar-color: #454a4d #202324;
+  outline: none;
+  transition: border-color 0.2s linear, box-shadow 0.2s linear;
+}
+
+#box:focus {
+  border-color: #9200b3;
+  box-shadow: 0 0 5px #d000ff;
+}
+
+footer > div {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+footer > button.btn-custom {
+  border: none;
+}

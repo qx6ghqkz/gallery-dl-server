@@ -4,12 +4,11 @@ on:
   push:
     branches:
       - 'main'
+      - 'dev'
       - 'test'
     paths:
       - 'docs/gallery-dl.conf'
       - 'gallery_dl_server/**'
-      - 'icons/**'
-      - 'templates/**'
       - 'Dockerfile'
       - 'requirements.txt'
       - 'start.sh'
@@ -25,6 +24,16 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
+
+      - name: Cache build dependencies
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            pip-cache-dir
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -57,11 +66,20 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Inject cache into Docker build
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          cache-map: |
+            {
+              "pip-cache-dir": "/root/.cache/pip"
+            }
+          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Web frontend for gallery-dl with yt-dlp" />
+
+    <title>gallery-dl-server</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Kristi&display=swap"
+      crossorigin="anonymous"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+"
+      crossorigin="anonymous"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.1/dist/sweetalert2.min.css"
+      integrity="sha384-0rAIx50lGVKKgD0hHiZxK1Qr9rwyluE7lb/4He9HuRAzfaemTbDsikKlQmxu0T8e"
+      crossorigin="anonymous"
+    />
+
+    <link rel="stylesheet" href="/static/styles/common.css?v=0.1.2" />
+    <link rel="stylesheet" href="/static/styles/index.css?v=0.1.5" />
+    <link rel="stylesheet" href="/static/styles/index-dark.css?v=0.1.1" id="dark-mode" disabled />
+
+    <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
+
+    <link rel="icon" href="/static/icons/favicon-16x16.png" sizes="16x16" type="image/png" />
+    <link rel="icon" href="/static/icons/favicon-32x32.png" sizes="32x32" type="image/png" />
+
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" sizes="180x180" />
+
+    <link rel="manifest" href="/static/icons/site.webmanifest" />
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.1/dist/sweetalert2.min.js"
+      integrity="sha384-+KH6r+BQCUofyrPWto++vkathMCGgcUomPfaNOyHmsw/PUw5LXIrZV8/XuRnVHc/"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+
+  <body class="d-flex flex-column h-100 text-center text-white d-none">
+    <header class="container-fluid d-flex justify-content-between align-items-center px-3 py-1">
+      <div id="header-left">
+        <a id="home" class="py-0" href="/gallery-dl">dl&nbsp;</a>
+        <a id="logs" class="py-3" href="/gallery-dl/logs">Logs</a>
+      </div>
+
+      <div id="header-right">
+        <a
+          href="https://github.com/qx6ghqkz/gallery-dl-server"
+          target="_blank"
+          rel="noopener noreferrer"
+          >gallery-dl-server</a
+        >
+        v{{ app_version }}</div
+      >
+    </header>
+
+    <main class="container d-flex flex-column flex-grow-1 p-3 pb-0">
+      <div class="mb-auto"></div>
+
+      <div class="px-3">
+        <h1 class="mb-2 display-4">gallery-dl</h1>
+
+        <p class="mb-3 lead">
+          Enter a URL to download the contents to the server.
+          The URL can be from any supported site listed by
+          <a
+            href="https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            >gallery-dl</a
+          >
+          or
+          <a
+            href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            >yt-dlp</a
+          >.</p
+        >
+
+        <form id="form" class="mb-4">
+          <div class="input-group">
+            <input
+              name="url"
+              type="url"
+              class="form-control"
+              placeholder="URL"
+              title="Enter URL"
+              aria-label="URL"
+              aria-describedby="button-submit"
+              autofocus
+            />
+
+            <select class="form-select" name="video-opts" title="Select Option">
+              <option value="none-selected" selected>Select Option</option>
+              <optgroup label="Video Options">
+                <option value="download-video">Download Video</option>
+                <option value="extract-audio">Extract Audio</option>
+              </optgroup>
+            </select>
+
+            <button id="button-submit" class="btn btn-custom" type="submit">Submit</button>
+          </div>
+        </form>
+
+        <div id="container-toggle" class="mb-4">
+          <button id="button-logs" class="btn btn-custom">Show Logs</button>
+        </div>
+
+        <div id="container-logs" class="mb-0">
+          <textarea id="box" class="d-none" name="Logs" placeholder="Logs output" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="mt-auto"></div>
+    </main>
+
+    <footer class="container-fluid d-flex justify-content-center align-items-center p-3">
+      <button class="btn btn-custom invisible"><i class="bi bi-moon-fill"></i></button>
+      <div class="flex-grow-1">
+        Web frontend for
+        <a
+          href="https://github.com/mikf/gallery-dl"
+          target="_blank"
+          rel="noopener noreferrer"
+          >gallery-dl</a
+        >
+        v{{ gallery_dl_version }} with
+        <a
+          href="https://github.com/yt-dlp/yt-dlp"
+          target="_blank"
+          rel="noopener noreferrer"
+          >yt-dlp</a
+        >
+        v{{ yt_dlp_version }}</div
+      >
+      <button id="dark-mode-toggle" class="btn btn-custom"><i class="bi bi-moon-fill"></i></button>
+    </footer>
+
+    <script src="/static/scripts/index.js?v=0.1.6"></script>
+  </body>
+</html>
