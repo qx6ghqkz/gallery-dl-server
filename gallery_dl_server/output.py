@@ -335,7 +335,6 @@ class FileProgress(logging.FileHandler):
     def __init__(self, filename=LOG_FILE, mode="a", encoding="utf-8", delay=False):
         super().__init__(filename, mode, encoding, delay)
         self.formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
-        self.last_msg = ""
         self.last_pos = 0
         self.queue = queue.Queue()
         self.thread = threading.Thread(target=self.process_queue, daemon=True)
@@ -346,13 +345,11 @@ class FileProgress(logging.FileHandler):
         """Override emit method to queue progress updates."""
         msg = self.format(record)
 
-        if "B/s" in msg and "B/s" in self.last_msg:
+        if "B/s" in msg:
             self.queue.put(msg)
         else:
             with self.thread_lock:
                 super().emit(record)
-
-        self.last_msg = msg
 
     def process_queue(self):
         """Process logging queue in a separate thread."""
@@ -372,23 +369,29 @@ class FileProgress(logging.FileHandler):
     def overwrite_last_line(self, mmap: mmap, msg: str):
         """Overwrite line from last saved position in memory-mapped file."""
         if self.last_pos == 0:
-            self.last_pos = mmap.rfind(b"\n", 0, mmap.rfind(b"\n")) + 1
+            self.last_pos = mmap.rfind(b"\n") + 1
 
         mmap.seek(self.last_pos)
 
         new_msg = msg.encode("utf-8")
         new_msg_length = len(new_msg)
-        last_msg_length = len(self.last_msg.encode("utf-8"))
+        target_msg_length = 54
 
         padding = b""
-        if new_msg_length < last_msg_length:
-            padding = b" " * (last_msg_length - new_msg_length)
+        if new_msg_length < target_msg_length:
+            padding = b" " * (target_msg_length - new_msg_length)
 
-        new_size = self.last_pos + max(new_msg_length, last_msg_length) + 1
+        terminator = b"\n"
+        new_size = self.last_pos + max(new_msg_length, target_msg_length) + 1
+
+        if utils.WINDOWS:
+            terminator = b"\r\n"
+            new_size += 1
+
         if new_size > mmap.size():
             mmap.resize(new_size)
 
-        mmap.write(new_msg + padding + b"\n")
+        mmap.write(new_msg + padding + terminator)
         mmap.flush()
 
     def close(self):
@@ -409,7 +412,7 @@ async def read_previous_line(file_path: str, last_position: int):
     with open(file_path, "rb") as file:
         with mmap(file.fileno(), 0, access=ACCESS_READ) as mm:
             if last_position == 0:
-                position = mm.rfind(b"\n", 0, mm.rfind(b"\n")) + 1
+                position = mm.rfind(b"\n", 0, mm.size() - 2) + 1
                 if position == 0:
                     return previous_line, position
             else:
