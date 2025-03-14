@@ -2,7 +2,7 @@
 
 import uvicorn
 
-from . import options
+from . import options, utils
 
 
 def main(
@@ -13,20 +13,17 @@ def main(
     if args is None:
         args = options.parse_args(module_name)
 
-    from . import server
-
     kwargs = {
-        "app": server.app,
         "host": args.host,
         "port": args.port,
         "log_level": args.server_log_level,
         "access_log": args.access_log,
+        "workers": 1 if utils.WINDOWS else 2,
     }
 
-    uvicorn_config = uvicorn.Config(**kwargs)
-    uvicorn_server = uvicorn.Server(uvicorn_config)
+    app = "gallery_dl_server.server:app"
 
     try:
-        uvicorn_server.run()
+        uvicorn.run(app, **kwargs)
     except KeyboardInterrupt:
         pass
