@@ -2,24 +2,43 @@
 
 import os
 import sys
-import logging
-import re
-import pickle
+
+import asyncio
 import io
+import logging
+import pickle
+import queue
+import re
+import threading
 
-from multiprocessing import Queue
+from mmap import mmap, ACCESS_READ, ACCESS_WRITE
+from multiprocessing.queues import Queue
 from typing import TextIO, Any
-from mmap import mmap
-
-import aiofiles
 
 from gallery_dl import output, job
 
-from . import utils
+from . import options, utils
 
+args = options.custom_args
 
-LOG_FILE = utils.get_log_file_path("app.log")
-LOG_LEVEL = logging.INFO
+if args is not None:
+    log_dir = args.log_dir
+    log_level = args.log_level
+    server_log_level = args.server_log_level
+    access_log = args.access_log
+
+    if server_log_level == "trace":
+        server_log_level = "debug"
+else:
+    log_dir = ""
+    log_level = "info"
+    server_log_level = "info"
+    access_log = False
+
+LOG_FILE = utils.get_log_file_path(log_dir, "app.log")
+LOG_LEVEL: int = getattr(logging, server_log_level.upper())
+LOG_LEVEL_DL: int = getattr(logging, log_level.upper())
+LOG_LEVEL_MIN = min(LOG_LEVEL, LOG_LEVEL_DL)
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s [%(name)s] [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s"
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
@@ -27,13 +46,17 @@ LOG_SEPARATOR = "/sep/"
 
 
 def initialise_logging(
-    name=utils.get_package_name(), stream=sys.stdout, file=LOG_FILE, level=LOG_LEVEL
+    name=utils.get_package_name(),
+    stream: TextIO | Any = sys.__stdout__,
+    file=LOG_FILE,
+    level=LOG_LEVEL,
 ):
     """Set up basic logging functionality for gallery-dl-server."""
-    logger = Logger(name)
+    logger = AsyncLogger(name, level)
+    logger.propagate = False
 
     if not logger.hasHandlers():
-        formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
 
         handler_console = setup_stream_handler(stream, formatter)
         logger.addHandler(handler_console)
@@ -42,59 +65,68 @@ def initialise_logging(
             handler_file = setup_file_handler(file, formatter)
             logger.addHandler(handler_file)
 
-    logger.setLevel(level)
-    logger.propagate = False
-
     return logger
 
 
-class Logger(logging.Logger):
-    """Custom logger which has a method to log multi-line messages."""
+class AsyncLogger(logging.Logger):
+    """Custom logger for async logging and logging multi-line messages."""
 
-    def __init__(self, name, level=logging.NOTSET):
+    def __init__(self, name: str, level=logging.NOTSET):
         super().__init__(name, level)
 
-    def log_multiline(self, level: int, message: str):
+    def log_multiline(self, level: int, msg: str):
         """Log each line of a multi-line message separately."""
-        for line in message.split("\n"):
+        for line in msg.split("\n"):
             if line.strip():
-                self.log(level, line.rstrip())
+                self.log(level, line)
+
+    def handle(self, record):
+        """Override handle method to call the async version."""
+        try:
+            event_loop = asyncio.get_running_loop()
+            event_loop.create_task(self.handle_async(record))
+        except RuntimeError:
+            asyncio.run(self.handle_async(record))
+
+    async def handle_async(self, record: logging.LogRecord):
+        """Perform asynchronous handling of log records."""
+        super().handle(record)
 
 
-class Formatter(logging.Formatter):
-    """Custom formatter which removes ANSI escape sequences."""
+class CustomFormatter(logging.Formatter):
+    """Custom formatter for log messages."""
 
     def format(self, record):
         record.levelname = record.levelname.lower()
 
-        message = super().format(record)
-        return remove_ansi_escape_sequences(message)
+        msg = super().format(record)
+        return remove_ansi_escape_sequences(msg).rstrip()
 
 
-def remove_ansi_escape_sequences(text: str):
+def remove_ansi_escape_sequences(text: str, /):
     """Remove ANSI escape sequences from the given text."""
-    ansi_escape_pattern = re.compile(r"\x1B\[[0-?9;]*[mGKH]")
+    ansi_escape_pattern = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
     return ansi_escape_pattern.sub("", text)
 
 
 def setup_stream_handler(stream: TextIO | Any, formatter: logging.Formatter):
     """Set up a console handler for logging."""
-    handler = logging.StreamHandler(stream)
-    handler.setFormatter(formatter)
+    stream_handler = logging.StreamHandler(stream)
+    stream_handler.setFormatter(formatter)
+    register_handler(stream_handler)
 
-    register_handler(handler)
-    return handler
+    return stream_handler
 
 
 def setup_file_handler(file: str, formatter: logging.Formatter):
     """Set up a file handler for logging."""
     os.makedirs(os.path.dirname(file), exist_ok=True)
 
-    handler = logging.FileHandler(file, mode="a", encoding="utf-8", delay=False)
-    handler.setFormatter(formatter)
+    file_handler = logging.FileHandler(file, mode="a", encoding="utf-8", delay=False)
+    file_handler.setFormatter(formatter)
+    register_handler(file_handler)
 
-    register_handler(handler)
-    return handler
+    return file_handler
 
 
 def get_logger(name: str | None = None):
@@ -104,20 +136,18 @@ def get_logger(name: str | None = None):
 
 def get_blank_logger(name="blank", stream=sys.stdout, level=logging.INFO):
     """Return a basic logger with no formatter."""
-    logger = Logger(name)
+    logger = AsyncLogger(name, level)
+    logger.propagate = False
 
     if not logger.hasHandlers():
         handler = logging.StreamHandler(stream)
         logger.addHandler(handler)
         register_handler(handler)
 
-    logger.setLevel(level)
-    logger.propagate = False
-
     return logger
 
 
-def setup_logging(level=LOG_LEVEL):
+def setup_logging(level=LOG_LEVEL_DL):
     """Set up gallery-dl logging."""
     logger = output.initialize_logging(level)
 
@@ -137,7 +167,7 @@ def setup_logging(level=LOG_LEVEL):
     return logger
 
 
-def capture_logs(log_queue: Queue):
+def capture_logs(log_queue: Queue[dict[str, Any]]):
     """Send logs that reach the root logger to a queue."""
     root = logging.getLogger()
     queue_handler = QueueHandler(log_queue)
@@ -158,7 +188,7 @@ def capture_logs(log_queue: Queue):
 class QueueHandler(logging.Handler):
     """Custom logging handler that sends log messages to a queue."""
 
-    def __init__(self, queue: Queue):
+    def __init__(self, queue: Queue[dict[str, Any]]):
         super().__init__()
         self.queue = queue
 
@@ -218,20 +248,12 @@ def stderr_write(s: str, /):
     sys.stderr.flush()
 
 
-def redirect_standard_streams(stdout=True, stderr=True):
-    """Redirect stdout and stderr to a logger or suppress them."""
-    logger_writer = LoggerWriter()
-    null_writer = NullWriter()
+def redirect_standard_streams(level=logging.INFO):
+    """Redirect stdout and stderr streams and log at level."""
+    logger_writer = LoggerWriter(level)
 
-    if stdout:
-        setattr(sys, "stdout", logger_writer)
-    else:
-        setattr(sys, "stdout", null_writer)
-
-    if stderr:
-        setattr(sys, "stderr", logger_writer)
-    else:
-        setattr(sys, "stderr", null_writer)
+    setattr(sys, "stdout", logger_writer)
+    setattr(sys, "stderr", logger_writer)
 
 
 class LoggerWriter:
@@ -239,158 +261,167 @@ class LoggerWriter:
 
     def __init__(self, level=logging.INFO):
         self.level = level
+        self.stream = sys.__stdout__
         self.logger = initialise_logging(type(self).__name__)
 
         for handler in self.logger.handlers[:]:
             handler.close()
             self.logger.removeHandler(handler)
 
-        self.console_handler = ConsoleProgress(self.logger)
-        self.file_handler = FileProgress(self.logger)
+        self.stream_handler = ConsoleProgress(self.stream)
+        self.file_handler = FileProgress()
 
-        self.logger.addHandler(self.console_handler)
+        self.logger.addHandler(self.stream_handler)
         self.logger.addHandler(self.file_handler)
 
-        register_handler(self.console_handler, self.file_handler)
+        register_handler(self.stream_handler, self.file_handler)
 
-    def write(self, msg: str):
-        """Prepare and then log messages."""
-        if not msg.strip():
+    def write(self, msg: str, /):
+        """Prepare and log messages."""
+        msg = msg.strip()
+
+        if not msg:
             return
 
-        if msg.startswith("\r" + "* "):
-            msg = f"Download successful: {msg[3:]}"
+        if msg.startswith("* "):
+            msg = f"Download successful: {msg[2:]}"
 
         if msg.startswith("# "):
-            msg = f"File already exists or its ID is in a download archive: {msg[2:]}"
-            self.level = logging.WARNING
+            msg = f"File already exists or is in download archive: {msg[2:]}"
+            return self.logger.log(logging.WARNING, msg)
 
-        self.logger.log(self.level, msg.strip())
+        self.logger.log(self.level, msg)
 
     def flush(self):
         pass
 
 
-class ConsoleProgress(logging.Handler):
-    """Custom handler for writing progress messages to the console."""
+class NullStream(io.TextIOBase):
+    """Suppress writes to stdout or stderr."""
 
-    def __init__(self, logger: logging.Logger):
-        super().__init__()
-        self.logger = logger
-        self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
+    def write(self, _: str, /):
+        pass
+
+    def flush(self):
+        pass
+
+
+class ConsoleProgress(logging.StreamHandler):
+    """Custom stream handler that can handle progress updates."""
+
+    def __init__(self, stream: TextIO | Any = NullStream()):
+        super().__init__(stream)
+        self.stream: TextIO | Any
+        self.formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
         self.last_msg = ""
 
     def emit(self, record):
-        """Write progress updates to stdout on the same line."""
-        msg = self.format(record).strip()
+        """Override emit method to write final progress update."""
+        msg = self.format(record)
 
-        assert sys.__stdout__
-        stdout = sys.__stdout__
+        if "B/s" not in msg and "B/s" in self.last_msg:
+            self.stream.write(self.last_msg + "\n")
+            self.stream.flush()
 
-        if "B/s" in msg and "B/s" in self.last_msg:
-            stdout.write("\033[A")
-
-            if len(msg) < len(self.last_msg):
-                msg = msg.ljust(len(self.last_msg))
-
-        stdout.write(msg + "\n")
-        stdout.flush()
+        if "B/s" not in msg:
+            super().emit(record)
 
         self.last_msg = msg
 
 
 class FileProgress(logging.FileHandler):
-    """Custom FileHandler that handles progress updates."""
+    """Custom file handler that can handle progress updates."""
 
-    def __init__(self, logger: logging.Logger):
-        super().__init__(filename=LOG_FILE, mode="a", encoding="utf-8", delay=False)
-        self.logger = logger
-        self.formatter = Formatter(LOG_FORMAT, LOG_FORMAT_DATE)
-        self.last_msg = ""
+    def __init__(self, filename=LOG_FILE, mode="a", encoding="utf-8", delay=False):
+        super().__init__(filename, mode, encoding, delay)
+        self.formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
+        self.last_pos = 0
+        self.queue = queue.Queue()
+        self.thread = threading.Thread(target=self.process_queue, daemon=True)
+        self.thread_lock = threading.Lock()
+        self.thread.start()
 
     def emit(self, record):
-        """Override the emit method to handle progress updates."""
-        msg = self.format(record).strip()
+        """Override emit method to queue progress updates."""
+        msg = self.format(record)
 
-        if "B/s" in msg and "B/s" in self.last_msg:
-            self.update_progress(msg)
+        if "B/s" in msg:
+            self.queue.put(msg)
         else:
-            super().emit(record)
+            with self.thread_lock:
+                super().emit(record)
 
-        self.last_msg = msg
+    def process_queue(self):
+        """Process logging queue in a separate thread."""
+        while True:
+            msg = self.queue.get()
+            if msg is None:
+                break
+            with self.thread_lock:
+                self.write_to_file(msg)
 
-    def update_progress(self, msg: str):
-        """Write download progress to the log file on the same line."""
-        mmapped_file = None
-        try:
-            with open(self.baseFilename, "r+b") as f:
-                mmapped_file = mmap(f.fileno(), 0)
-                self.overwrite_last_line(mmapped_file, msg)
-        except Exception as e:
-            self.logger.debug(f"Exception: {type(e).__name__}: {e}")
-        finally:
-            if mmapped_file:
-                mmapped_file.close()
+    def write_to_file(self, msg: str):
+        """Write download progress to the log file asynchronously."""
+        with open(self.baseFilename, "r+b") as file:
+            with mmap(file.fileno(), 0, access=ACCESS_WRITE) as mm:
+                self.overwrite_last_line(mm, msg)
 
-    def overwrite_last_line(self, mmapped_file: mmap, msg: str):
-        """Overwrite the last line of a memory-mapped file with the given message."""
-        last_newline_pos = mmapped_file.rfind(b"\n")
-        second_last_newline_pos = mmapped_file.rfind(b"\n", 0, last_newline_pos)
+    def overwrite_last_line(self, mmap: mmap, msg: str):
+        """Overwrite line from last saved position in memory-mapped file."""
+        if self.last_pos == 0:
+            self.last_pos = mmap.rfind(b"\n") + 1
 
-        mmapped_file.seek(second_last_newline_pos + 1)
+        mmap.seek(self.last_pos)
 
-        new_msg = msg.encode("utf-8") + b"\n"
+        new_msg = msg.encode("utf-8")
         new_msg_length = len(new_msg)
+        target_msg_length = 54
 
-        current_pos = mmapped_file.tell()
-        new_file_size = current_pos + new_msg_length
+        padding = b""
+        if new_msg_length < target_msg_length:
+            padding = b" " * (target_msg_length - new_msg_length)
 
-        if new_file_size > mmapped_file.size():
-            mmapped_file.resize(new_file_size)
+        terminator = b"\n"
+        new_size = self.last_pos + max(new_msg_length, target_msg_length) + 1
 
-        mmapped_file.write(new_msg)
-        mmapped_file.flush()
+        if utils.WINDOWS:
+            terminator = b"\r\n"
+            new_size += 1
 
-        mmapped_file.resize(new_file_size)
+        if new_size > mmap.size():
+            mmap.resize(new_size)
 
+        mmap.write(new_msg + padding + terminator)
+        mmap.flush()
 
-async def read_previous_line(file_path: str):
-    """Return the previous line of a file."""
-    async with aiofiles.open(file_path, "rb") as file:
-        await file.seek(0, os.SEEK_END)
-        position = await file.tell()
-
-        if position == 0:
-            return None
-
-        last_line_found = False
-        previous_line = b""
-
-        while position > 0:
-            await file.seek(position - 1)
-            char = await file.read(1)
-            if char == b"\n":
-                if last_line_found:
-                    previous_line = await file.readline()
-                    break
-                else:
-                    last_line_found = True
-            position -= 1
-
-        if previous_line:
-            return previous_line.decode("utf-8").rstrip()
-        else:
-            return None
+    def close(self):
+        """Stop logging thread and close handler."""
+        self.queue.put(None)
+        self.thread.join()
+        super().close()
 
 
-class NullWriter:
-    """Suppress writes to stdout or stderr."""
+def read_previous_line(file_path: str, last_position: int):
+    """Return the previous line of a file or from a given position."""
+    previous_line = ""
+    position = 0
 
-    def write(self, msg: str):
-        pass
+    if os.path.getsize(file_path) == 0:
+        return previous_line, position
 
-    def flush(self):
-        pass
+    with open(file_path, "rb") as file:
+        with mmap(file.fileno(), 0, access=ACCESS_READ) as mm:
+            if last_position == 0:
+                position = mm.rfind(b"\n", 0, mm.size() - 2) + 1
+                if position == 0:
+                    return previous_line, position
+            else:
+                position = last_position
+
+            next_line = mm.find(b"\n", position) + 1
+            previous_line = mm[position:next_line].decode("utf-8")
+
+    return previous_line, position
 
 
 class StringLogger:
@@ -426,7 +457,7 @@ class StringHandler(logging.Handler):
         msg = self.format(record)
 
         if msg.strip():
-            self.buffer.write(msg.strip() + self.terminator)
+            self.buffer.write(msg + self.terminator)
 
     def get_logs(self):
         """Retrieve logs from the buffer."""
@@ -439,15 +470,15 @@ class StringHandler(logging.Handler):
         super().close()
 
 
-def last_line(message: str, string: str, case_sensitive=True):
+def last_line(msg: str, string: str, case_sensitive=True):
     """Get the last line containing a string in a message."""
-    lines = message.split("\n")
+    lines = msg.split("\n")
 
     for line in reversed(lines):
         if (string in line) if case_sensitive else (string.lower() in line.lower()):
             return line
 
-    return message
+    return None
 
 
 def join(_list: list[str]):
@@ -460,26 +491,25 @@ def join(_list: list[str]):
     return ", ".join(formatted_list)
 
 
-def configure_uvicorn_logs():
-    """Configure uvicorn logging behaviour."""
-    main = logging.getLogger("uvicorn")
-    error = logging.getLogger("uvicorn.error")
+def configure_default_loggers(is_main_process=True):
+    """Configure default logging behaviour."""
+    asyncio_log = logging.getLogger("asyncio")
+    asyncio_log.setLevel(logging.CRITICAL)
 
-    if LOG_LEVEL > logging.DEBUG:
-        error.addFilter(Filter())
+    if is_main_process:
+        uvicorn_error = logging.getLogger("uvicorn.error")
 
-    return main
+        if not access_log:
+            uvicorn_error.addFilter(WebSocketFilter())
 
 
-class Filter(logging.Filter):
-    """Filter out specific log messages."""
+class WebSocketFilter(logging.Filter):
+    """Filter out WebSocket connection logs."""
 
     def filter(self, record):
-        return not (
-            "WebSocket /ws/logs" in record.getMessage()
-            or "connection open" in record.getMessage()
-            or "connection closed" in record.getMessage()
-        )
+        msg = record.getMessage()
+        strings = ["WebSocket /ws/logs", "connection open", "connection closed"]
+        return not any(string in msg for string in strings)
 
 
 def register_handler(*handlers: logging.Handler):
@@ -490,7 +520,7 @@ def register_handler(*handlers: logging.Handler):
         logging_manager.add_handler(handler)
 
 
-async def close_handlers():
+def close_handlers():
     """Close all registered logging handlers."""
     logging_manager = LoggingManager()
     logging_manager.close_all()
@@ -537,6 +567,7 @@ class BasicLogger(logging.Logger):
     def __init__(self):
         super().__init__(name=type(self).__name__, level=LOG_LEVEL)
         self.addHandler(BasicHandler())
+        self.propagate = False
 
     def close(self):
         """Close and remove all handlers from the logger."""
@@ -550,7 +581,7 @@ class BasicHandler(logging.Handler):
 
     def __init__(self):
         super().__init__()
-        self.formatter = Formatter(LOG_FORMAT_DEBUG, LOG_FORMAT_DATE)
+        self.formatter = CustomFormatter(LOG_FORMAT, LOG_FORMAT_DATE)
 
     def emit(self, record):
         sys.stdout.write(self.format(record) + "\n")

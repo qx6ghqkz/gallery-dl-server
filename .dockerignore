@@ -6,7 +6,7 @@ __pycache__/
 .ruff_cache/
 
 # Scripts
-scripts/
+/scripts/
 *.bat
 *.cmd
 *.ps1
@@ -40,10 +40,12 @@ README.md
 SECURITY.md
 
 # Misc
+certs/
 drafts/
 gallery-dl/
 logs/
 tests/
+*.log
 *.pem
 
 # Build

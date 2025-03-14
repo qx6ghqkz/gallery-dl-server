@@ -8,14 +8,12 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kristi&display=swap" crossorigin="anonymous" />
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Kristi&display=swap"
       crossorigin="anonymous"
-      >
-    </script>
+    />
 
     <link
       rel="stylesheet"
@@ -24,39 +22,23 @@
       crossorigin="anonymous"
     />
 
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="/static/icons/apple-touch-icon.png"
-    />
+    <link rel="stylesheet" href="/static/styles/common.css?v=0.1.2" />
+    <link rel="stylesheet" href="/static/styles/logs.css?v=0.1.2" />
 
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="16x16"
-      href="/static/icons/favicon-16x16.png"
-    />
+    <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
 
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href="/static/icons/favicon-32x32.png"
-    />
+    <link rel="icon" href="/static/icons/favicon-16x16.png" sizes="16x16" type="image/png" />
+    <link rel="icon" href="/static/icons/favicon-32x32.png" sizes="32x32" type="image/png" />
 
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="/static/icons/favicon.ico"
-    />
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" sizes="180x180" />
 
-    <link
-      rel="manifest"
-      href="/static/icons/site.webmanifest"
-    />
+    <link rel="manifest" href="/static/icons/site.webmanifest" />
 
-    <link rel="stylesheet" href="/static/css/styles.css?v=0.1.2">
-    <link rel="stylesheet" href="/static/css/logs.css?v=0.1.0">
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
   </head>
 
   <body class="d-flex flex-column h-100">
@@ -84,14 +66,17 @@
         </div>
 
         <div>
+          <button id="refresh-logs" class="btn btn-custom">Refresh</button>
+          <button id="clear-logs" class="btn btn-custom">Clear logs</button>
+
           <a class="btn btn-custom" href="/stream/logs">View plain text</a>
           <a class="btn btn-custom" href="/stream/logs" download="gallery-dl-server.log" >Download</a>
         </div>
       </div>
 
-      <pre id="logContainer" class="h-100 m-3">{{ logs }}</pre>
+      <pre id="container-logs" class="h-100 m-3">{{ logs }}</pre>
     </main>
 
-    <script src="/static/js/logs.js?v=0.1.0"></script>
+    <script src="/static/scripts/logs.js?v=0.1.3"></script>
   </body>
 </html>

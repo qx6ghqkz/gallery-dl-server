@@ -5,12 +5,12 @@ import sys
 
 from importlib import metadata
 
-
 WINDOWS = os.name == "nt"
 DOCKER = os.path.isfile("/.dockerenv")
 KUBERNETES = os.environ.get("KUBERNETES_SERVICE_HOST") is not None
 EXECUTABLE = bool(getattr(sys, "frozen", False))
 MEIPASS_PATH: str | None = getattr(sys, "_MEIPASS", None)
+PYTHON_VERSION = sys.version_info
 
 CONTAINER = DOCKER or KUBERNETES
 MEIPASS = MEIPASS_PATH is not None
@@ -26,20 +26,20 @@ def resource_path(relative_path: str):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 
-def get_log_file_path(filename: str):
+def get_log_file_path(log_dir: str, filename: str):
     """Get log file path depending on whether the package is installed."""
-    log_dir = os.path.expanduser("~")
+    is_installed = is_package_installed("gallery-dl-server")
 
-    installed_name = "gallery-dl-server"
+    if log_dir or is_installed:
+        filename = "gallery-dl-server.log"
 
-    if is_package_installed(installed_name):
-        filename = installed_name + ".log"
-    else:
-        log_dir = os.path.join(os.getcwd(), "logs")
+    if not log_dir:
+        if is_installed:
+            log_dir = os.path.expanduser("~")
+        else:
+            log_dir = os.path.join(os.getcwd(), "logs")
 
-    log_path = os.path.join(log_dir, filename)
-
-    return log_path
+    return os.path.join(log_dir, filename)
 
 
 def dirname_parent(path: str):
@@ -72,9 +72,13 @@ def is_package_installed(installed_name: str):
 
 
 def normalise_path(path: str):
-    """Expands environment variables in the given path, normalises it,
-    and returns the absolute path."""
-    return os.path.abspath(os.path.normpath(os.path.expandvars(path)))
+    """Expands user constructions and environment variables in the given path,
+    normalises it, and returns the absolute path."""
+    return (
+        os.path.abspath(os.path.normpath(os.path.expandvars(os.path.expanduser(path))))
+        if path
+        else path
+    )
 
 
 def is_imported(module_name: str):
