@@ -401,7 +401,7 @@ class FileProgress(logging.FileHandler):
         super().close()
 
 
-async def read_previous_line(file_path: str, last_position: int):
+def read_previous_line(file_path: str, last_position: int):
     """Return the previous line of a file or from a given position."""
     previous_line = ""
     position = 0

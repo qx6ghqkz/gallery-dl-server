@@ -260,7 +260,9 @@ async def log_update(websocket: WebSocket):
                 new_content = ""
                 do_update_state = False
 
-                previous_line, position = await output.read_previous_line(log_file, last_position)
+                previous_line, position = await asyncio.to_thread(
+                    output.read_previous_line, log_file, last_position
+                )
                 if "B/s" in previous_line and previous_line != last_line:
                     new_content = previous_line
                     do_update_state = True
