@@ -97,6 +97,6 @@ def run(
 
     try:
         args = options.custom_args = options.CustomNamespace(**kwargs)
-        app.main(args)
+        app.main(args=args)
     except TypeError:
         raise

@@ -9,13 +9,13 @@ from . import utils
 custom_args: "CustomNamespace | None" = None
 
 
-def parse_args(module_name: str | None = None):
+def parse_args(is_main_module: bool = False):
     """Parse command-line arguments and return namespace with the correct types."""
     global custom_args
     if custom_args is not None:
         return custom_args
 
-    prog_name = utils.get_package_name() if module_name == "__main__" else None
+    prog_name = utils.get_package_name() if is_main_module else None
 
     parser = ArgumentParser(prog=prog_name, description="Run gallery-dl-server with custom options")
 

@@ -15,7 +15,7 @@ get_ids () {
 }
 
 set_umask () {
-  UMASK="${UMASK:-002}"
+  UMASK="${UMASK:-022}"
   umask "$UMASK"
 }
 
