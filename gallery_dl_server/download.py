@@ -37,13 +37,8 @@ def run(
     """Set gallery-dl configuration, set up logging and run download job."""
     _init(custom_args)
 
-    config_files = [
-        "/config/gallery-dl.conf",
-        "/config/config.json",
-    ]
-
     config.clear()
-    config.load(config_files)
+    config.load()
 
     output.setup_logging()
     output.capture_logs(log_queue)

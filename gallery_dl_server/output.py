@@ -21,21 +21,18 @@ from . import options, utils
 
 args = options.custom_args
 
-if args is not None:
-    log_dir = args.log_dir
-    log_level = args.log_level
-    server_log_level = args.server_log_level
-    access_log = args.access_log
+if args is None:
+    args = options.get_default_args()
 
-    if server_log_level == "trace":
-        server_log_level = "debug"
-else:
-    log_dir = ""
-    log_level = "info"
-    server_log_level = "info"
-    access_log = False
+log_dir = args.log_dir
+log_level = args.log_level
+server_log_level = args.server_log_level
+access_log = args.access_log
 
-LOG_FILE = utils.get_log_file_path(log_dir, "app.log")
+if server_log_level == "trace":
+    server_log_level = "debug"
+
+LOG_FILE = utils.get_log_file_path(log_dir)
 LOG_LEVEL: int = getattr(logging, server_log_level.upper())
 LOG_LEVEL_DL: int = getattr(logging, log_level.upper())
 LOG_LEVEL_MIN = min(LOG_LEVEL, LOG_LEVEL_DL)
@@ -330,7 +327,7 @@ class ConsoleProgress(logging.StreamHandler):
 
 
 class FileProgress(logging.FileHandler):
-    """Custom file handler that can handle progress updates."""
+    """Custom file handler that can handle progress updates asynchronously."""
 
     def __init__(self, filename=LOG_FILE, mode="a", encoding="utf-8", delay=False):
         super().__init__(filename, mode, encoding, delay)
@@ -342,7 +339,7 @@ class FileProgress(logging.FileHandler):
         self.thread.start()
 
     def emit(self, record):
-        """Override emit method to queue progress updates."""
+        """Override emit method to queue progress messages."""
         msg = self.format(record)
 
         if "B/s" in msg:
@@ -361,13 +358,13 @@ class FileProgress(logging.FileHandler):
                 self.write_to_file(msg)
 
     def write_to_file(self, msg: str):
-        """Write download progress to the log file asynchronously."""
+        """Write download progress to the memory-mapped log file."""
         with open(self.baseFilename, "r+b") as file:
             with mmap(file.fileno(), 0, access=ACCESS_WRITE) as mm:
-                self.overwrite_last_line(mm, msg)
+                self.write_progress(mm, msg)
 
-    def overwrite_last_line(self, mmap: mmap, msg: str):
-        """Overwrite line from last saved position in memory-mapped file."""
+    def write_progress(self, mmap: mmap, msg: str):
+        """Write download progress updates to the same line."""
         if self.last_pos == 0:
             self.last_pos = mmap.rfind(b"\n") + 1
 
