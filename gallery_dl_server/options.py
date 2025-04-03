@@ -112,6 +112,25 @@ def validate_args(parser: ArgumentParser, args: Namespace):
     )
 
 
+def get_default_args():
+    """Bypass argument parsing and return the default arguments."""
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = os.environ.get("PORT", "0")
+    log_dir = os.environ.get("LOG_DIR", "")
+    log_level = os.environ.get("LOG_LEVEL", "info")
+    server_log_level = os.environ.get("SERVER_LOG_LEVEL", "info")
+    access_log = os.environ.get("ACCESS_LOG", "false")
+
+    return CustomNamespace(
+        host=host,
+        port=int(port),
+        log_dir=utils.normalise_path(log_dir),
+        log_level=log_level.lower(),
+        server_log_level=server_log_level.lower(),
+        access_log=access_log.lower() == "true",
+    )
+
+
 class CustomNamespace(Namespace):
     """Custom namespace for type enforcement."""
 

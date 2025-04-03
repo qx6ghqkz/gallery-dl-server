@@ -23,7 +23,12 @@ def clear(conf: dict[str, Any] = _config):
 
 def get_default_configs():
     """Return default gallery-dl configuration file locations."""
-    if utils.WINDOWS:
+    if utils.CONTAINER:
+        _default_configs = [
+            "/config/gallery-dl.conf",
+            "/config/config.json",
+        ]
+    elif utils.WINDOWS:
         _default_configs = [
             "%APPDATA%\\gallery-dl\\config.json",
             "%USERPROFILE%\\gallery-dl\\config.json",
@@ -64,15 +69,15 @@ def get_new_configs(_configs: list[str], exts: list[str]):
     return _new_configs
 
 
-def load(_configs: list[str]):
-    """Load configuration files."""
+def load():
+    """Load gallery-dl configuration files."""
     configs_found: list[str] = []
     configs_loaded: list[str] = []
     exit_codes: list[int | str | None] = []
     messages: list[str] = []
 
     new_exts = [".toml", ".yaml", ".yml"]
-    _configs = get_new_configs(_configs if utils.CONTAINER else get_default_configs(), new_exts)
+    _configs = get_new_configs(get_default_configs(), new_exts)
 
     log_buffer = output.StringLogger()
 
@@ -88,12 +93,12 @@ def load(_configs: list[str]):
                 configs_loaded.append(path)
             except ImportError as e:
                 messages.append(f"{type(e).__name__}: {e}")
-                continue
             except SystemExit as e:
                 exit_codes.append(e.code)
                 messages.append(log_buffer.get_logs().split(output.LOG_SEPARATOR)[-1])
 
     log_buffer.close()
+
     log_results(_configs, configs_loaded, configs_found, exit_codes, messages)
 
 
