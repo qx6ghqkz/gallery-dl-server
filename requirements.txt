@@ -10,8 +10,8 @@ pyyaml==6.0.2
 requests==2.32.3
 starlette==0.47.0
 toml==0.10.2; python_version <= '3.10'
-uvicorn==0.34.2; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'
-uvicorn[standard]==0.34.2; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'
+uvicorn==0.34.3; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'
+uvicorn[standard]==0.34.3; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'
 watchfiles==1.0.5
 websockets==15.0.1
 yt-dlp==2025.5.22
