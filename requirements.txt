@@ -8,7 +8,7 @@ pycryptodomex==3.23.0
 python-multipart==0.0.20
 pyyaml==6.0.2
 requests==2.32.4
-starlette==0.47.1
+starlette==0.47.2
 toml==0.10.2; python_version <= '3.10'
 uvicorn==0.35.0; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'
 uvicorn[standard]==0.35.0; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'
