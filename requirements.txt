@@ -12,6 +12,6 @@ starlette==0.48.0
 toml==0.10.2; python_version <= '3.10'
 uvicorn==0.37.0; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'
 uvicorn[standard]==0.37.0; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'
-watchfiles==1.1.0
+watchfiles==1.1.1
 websockets==15.0.1
-yt-dlp==2025.9.26
+yt-dlp==2025.10.14
