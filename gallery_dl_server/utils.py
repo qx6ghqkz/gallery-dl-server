@@ -26,12 +26,14 @@ def resource_path(relative_path: str):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 
-def get_log_file_path(log_dir: str, filename: str):
-    """Get log file path depending on whether the package is installed."""
+def get_log_file_path(log_dir: str):
+    """Get log file path depending on the package location."""
     is_installed = is_package_installed("gallery-dl-server")
 
     if log_dir or is_installed:
         filename = "gallery-dl-server.log"
+    else:
+        filename = "app.log"
 
     if not log_dir:
         if is_installed:

@@ -9,13 +9,13 @@ from . import utils
 custom_args: "CustomNamespace | None" = None
 
 
-def parse_args(module_name: str | None = None):
+def parse_args(is_main_module: bool = False):
     """Parse command-line arguments and return namespace with the correct types."""
     global custom_args
     if custom_args is not None:
         return custom_args
 
-    prog_name = utils.get_package_name() if module_name == "__main__" else None
+    prog_name = utils.get_package_name() if is_main_module else None
 
     parser = ArgumentParser(prog=prog_name, description="Run gallery-dl-server with custom options")
 
@@ -105,6 +105,25 @@ def validate_args(parser: ArgumentParser, args: Namespace):
     return CustomNamespace(
         host=host,
         port=port,
+        log_dir=utils.normalise_path(log_dir),
+        log_level=log_level.lower(),
+        server_log_level=server_log_level.lower(),
+        access_log=access_log.lower() == "true",
+    )
+
+
+def get_default_args():
+    """Bypass argument parsing and return the default arguments."""
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = os.environ.get("PORT", "0")
+    log_dir = os.environ.get("LOG_DIR", "")
+    log_level = os.environ.get("LOG_LEVEL", "info")
+    server_log_level = os.environ.get("SERVER_LOG_LEVEL", "info")
+    access_log = os.environ.get("ACCESS_LOG", "false")
+
+    return CustomNamespace(
+        host=host,
+        port=int(port),
         log_dir=utils.normalise_path(log_dir),
         log_level=log_level.lower(),
         server_log_level=server_log_level.lower(),

@@ -217,7 +217,7 @@ Use the arguments when running the server directly from the command line, and th
 |                       | `CONTAINER_PORT`     | &check;     | `int`  | `0–65535`                                                          | `9080`        | Set the internal container port    |
 | &mdash;               | `UID`                | &check;     | `int`  | Any valid user ID                                                  | `1000`        | User ID to run the server process  |
 | &mdash;               | `GID`                | &check;     | `int`  | Any valid group ID                                                 | `1000`        | Group ID to run the server process |
-| &mdash;               | `UMASK`              | &check;     | `int`  | Any valid `umask` value                                            | `002`         | Set `umask` for file permissions   |
+| &mdash;               | `UMASK`              | &check;     | `int`  | Any valid `umask` value                                            | `022`         | Set `umask` for file permissions   |
 | `‑‑log‑dir`           | `LOG_DIR`            | &cross;     | `str`  | Any existing directory                                             | `~`           | Set the log file directory         |
 | `‑‑log‑level`         | `LOG_LEVEL`          | &cross;     | `str`  | `critical`<br>`error`<br>`warning`<br>`info`<br>`debug`            | `info`        | Set the download log level         |
 | `‑‑server‑log‑level`  | `SERVER_LOG_LEVEL`   | &cross;     | `str`  | `critical`<br>`error`<br>`warning`<br>`info`<br>`debug`<br>`trace` | `info`        | Set the server log level           |

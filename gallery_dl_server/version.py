@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "0.8.0-dev.14-test.2"
+__version__ = "0.8.1"
