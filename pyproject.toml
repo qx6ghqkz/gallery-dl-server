@@ -64,15 +64,13 @@ dependencies = [
     "uvicorn[standard]>=0.32.0,<1.0.0; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'",
     "watchfiles>=1.0.0,<2.0.0",
     "websockets>=13.1",
-    "yt-dlp>=2024.11.04",
+    "yt-dlp[default,curl-cffi]>=2025.11.12",
 ]
 
 [project.optional-dependencies]
 full = [
     "brotli>=1.1.0; implementation_name == 'cpython'",
     "brotlicffi>=1.1.0; implementation_name != 'cpython'",
-    "mutagen>=1.47.0",
-    "pycryptodomex>=3.21.0",
     "pyyaml>=6.0.2",
     "toml>=0.10.2; python_version <= '3.10'",
 ]
