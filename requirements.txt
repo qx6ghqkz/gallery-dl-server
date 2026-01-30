@@ -12,4 +12,4 @@ uvicorn==0.40.0; (platform_machine != 'x86_64' and platform_machine != 'AMD64') 
 uvicorn[standard]==0.40.0; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'
 watchfiles==1.1.1
 websockets==16.0
-yt-dlp[default,curl-cffi]==2025.12.8
+yt-dlp[default,curl-cffi]==2026.1.29
