@@ -154,6 +154,7 @@ form.onsubmit = async (event) => {
     console.log(data);
 
     event.target.url.value = "";
+    event.target.cookies.value = "";
 
     if (url) {
       successAlert.fire({

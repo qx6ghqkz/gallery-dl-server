@@ -71,10 +71,12 @@ async def submit_form(request: Request):
     """Process form submission data and start download in the background."""
     form_data = await request.form()
 
-    keys = ("url", "video-opts")
+    keys = ("url", "video-opts", "cookies")
     values = tuple(form_data.get(key) for key in keys)
 
-    url, video_opts = (None if isinstance(value, UploadFile) else value for value in values)
+    url = values[0] if not isinstance(values[0], UploadFile) else None
+    video_opts = values[1] if not isinstance(values[1], UploadFile) else None
+    cookies_file = values[2] if isinstance(values[2], UploadFile) else None
 
     if not url:
         log.error("No URL provided.")
@@ -89,9 +91,25 @@ async def submit_form(request: Request):
     if not video_opts:
         video_opts = "none-selected"
 
-    request_options = {"video-options": video_opts}
+    cookies_path = None
+    if cookies_file and cookies_file.filename:
+        cookies_dir = os.path.join(os.getcwd(), "temp_cookies")
+        os.makedirs(cookies_dir, exist_ok=True)
+        
+        cookies_path = os.path.join(cookies_dir, f"{time.time()}_{cookies_file.filename}")
+        
+        async with aiofiles.open(cookies_path, "wb") as f:
+            content = await cookies_file.read()
+            await f.write(content)
+        
+        log.info(f"Saved cookies file to: {cookies_path}")
 
-    task = BackgroundTask(download_task, url.strip(), request_options)
+    request_options = {
+        "video-options": video_opts,
+        "cookies-path": cookies_path,
+    }
+
+    task = BackgroundTask(download_task, url.strip(), request_options, cookies_path)
 
     log.info("Added URL to the download queue: %s", url)
 
@@ -105,7 +123,7 @@ async def submit_form(request: Request):
     )
 
 
-def download_task(url: str, request_options: dict[str, str]):
+def download_task(url: str, request_options: dict[str, str], cookies_path: str | None = None):
     """Initiate download as a subprocess and log the output."""
     log_queue: Queue[dict[str, Any]] = multiprocessing.Queue()
     return_status: Queue[int] = multiprocessing.Queue()
@@ -142,6 +160,13 @@ def download_task(url: str, request_options: dict[str, str]):
         log.info("Download process exited successfully")
     else:
         log.error("Download failed with exit code: %s", exit_code)
+
+    if cookies_path and os.path.isfile(cookies_path):
+        try:
+            os.remove(cookies_path)
+            log.info(f"Removed temporary cookies file: {cookies_path}")
+        except Exception as e:
+            log.error(f"Failed to remove cookies file: {e}")
 
 
 async def log_route(request: Request):
