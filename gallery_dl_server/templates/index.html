@@ -106,7 +106,7 @@
         >
 
         <form id="form" class="mb-4">
-          <div class="input-group">
+          <div class="input-group mb-2">
             <input
               name="url"
               type="url"
@@ -127,6 +127,18 @@
             </select>
 
             <button id="button-submit" class="btn btn-custom" type="submit">Submit</button>
+          </div>
+          <div class="input-group">
+            <label class="input-group-text" for="cookies-file">Cookies (Optional)</label>
+            <input
+              type="file"
+              class="form-control"
+              id="cookies-file"
+              name="cookies"
+              accept=".txt,.json"
+              title="Upload cookies file"
+              aria-label="Cookies file"
+            />
           </div>
         </form>
 

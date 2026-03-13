@@ -5,6 +5,7 @@ from multiprocessing.queues import Queue
 from typing import Any
 
 from gallery_dl import job, exception
+from gallery_dl import config as gdl_config
 
 from . import options
 
@@ -53,6 +54,18 @@ def run(
 
     if any(entries[1]):
         log.info(f"Removed entries from the config dict: {entries[1]}")
+
+    cookies_path = request_options.get("cookies-path")
+    if cookies_path:
+        log.info(f"Using cookies file: {cookies_path}")
+        
+        # Set cookies at multiple levels to ensure it's picked up
+        gdl_config.set((), "cookies", cookies_path)
+        gdl_config.set(("extractor",), "cookies", cookies_path)
+        
+        # Verify the config was set
+        log.info(f"Config cookies (global): {gdl_config.get((), 'cookies')}")
+        log.info(f"Config cookies (extractor): {gdl_config.get(('extractor',), 'cookies')}")
 
     status = 0
     try:
