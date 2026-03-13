@@ -1,51 +1,19 @@
-name: Publish Docker Image
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
-      - 'main'
-      - 'dev'
-      - 'test'
-    paths:
-      - 'docs/gallery-dl.conf'
-      - 'gallery_dl_server/**'
-      - 'Dockerfile'
-      - 'requirements.txt'
-      - 'start.sh'
-    tags:
-      - 'v*'
+      - main
   workflow_dispatch:
 
 jobs:
-  docker:
-    name: Build Docker image and push to Docker Hub and GHCR
-    if: ${{ (github.event_name == 'push' && 'pass' || (github.event_name == 'workflow_dispatch' && 'pass' || 'fail')) == 'pass' }}
+  build:
+    name: Build and push multi-platform Docker image
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Check out the repo
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Cache build dependencies
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            pip-cache-dir
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ github.repository }}
-            ghcr.io/${{ github.repository }}
-          tags: |
-            type=ref,event=branch,enable=${{ github.ref_name != github.event.repository.default_branch }}
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -59,39 +27,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Inject cache into Docker build
-        uses: reproducible-containers/buildkit-cache-dance@v3
-        with:
-          cache-map: |
-            {
-              "pip-cache-dir": "/root/.cache/pip"
-            }
-          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/gallery-dl-server-neo:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Update Docker Hub description
-        if: ${{ github.ref_name == github.event.repository.default_branch }}
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ${{ github.repository }}
-          short-description: ${{ github.event.repository.description }}
-          enable-url-completion: true
