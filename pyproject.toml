@@ -59,7 +59,7 @@ dependencies = [
     "jinja2>=3.1.5,<4.0.0",
     "python-multipart>=0.0.20",
     "requests>=2.32.3,<3.0.0",
-    "starlette>=0.45.1,<1.0.0",
+    "starlette>=0.45.1,<2.0.0",
     "uvicorn>=0.32.0,<1.0.0; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'",
     "uvicorn[standard]>=0.32.0,<1.0.0; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'",
     "watchfiles>=1.0.0,<2.0.0",
