@@ -57,9 +57,9 @@ async def redirect(request: Request):
 async def homepage(request: Request):
     """Return homepage template response."""
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "app_version": version.__version__,
             "gallery_dl_version": gallery_dl.version.__version__,
             "yt_dlp_version": yt_dlp.version.__version__,
@@ -164,9 +164,9 @@ async def log_route(request: Request):
     logs = await read_log_file(log_file)
 
     return templates.TemplateResponse(
+        request,
         "logs.html",
         {
-            "request": request,
             "app_version": version.__version__,
             "logs": logs,
         },
