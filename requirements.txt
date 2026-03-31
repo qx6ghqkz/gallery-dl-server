@@ -5,7 +5,7 @@ gallery_dl==1.31.10
 jinja2==3.1.6
 python-multipart==0.0.22
 pyyaml==6.0.3
-requests==2.33.0
+requests==2.33.1
 starlette==1.0.0
 toml==0.10.2; python_version <= '3.10'
 uvicorn==0.42.0; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'
