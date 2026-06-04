@@ -8,7 +8,7 @@ pyyaml==6.0.3
 requests==2.34.2
 starlette==1.2.1
 toml==0.10.2; python_version <= '3.10'
-uvicorn==0.48.0; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'
+uvicorn==0.49.0; (platform_machine != 'x86_64' and platform_machine != 'AMD64') or implementation_name != 'cpython'
 uvicorn[standard]==0.42.0; (platform_machine == 'x86_64' or platform_machine == 'AMD64') and implementation_name == 'cpython'
 watchfiles==1.2.0
 websockets==16.0
