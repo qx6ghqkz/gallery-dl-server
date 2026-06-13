@@ -1,26 +1,25 @@
 # gallery-dl-server
 
-[![GitHub Release](https://img.shields.io/github/v/release/qx6ghqkz/gallery-dl-server?logo=github&style=for-the-badge)](https://github.com/qx6ghqkz/gallery-dl-server/releases/latest "Latest Release")
+[![GitHub Release](https://img.shields.io/github/v/release/jthickma/gallery-dl-server?logo=github&style=for-the-badge)](https://github.com/jthickma/gallery-dl-server/releases/latest "Latest Release")
 [![PyPI - Version](https://img.shields.io/pypi/v/gallery-dl-server?logo=pypi&style=for-the-badge)](https://pypi.org/project/gallery-dl-server "PyPI")
-[![Docker Image Version](https://img.shields.io/docker/v/qx6ghqkz/gallery-dl-server?logo=docker&label=Docker&sort=semver&style=for-the-badge)](https://hub.docker.com/r/qx6ghqkz/gallery-dl-server "Docker")
-[![Docker Pulls](https://img.shields.io/docker/pulls/qx6ghqkz/gallery-dl-server.svg?logo=docker&style=for-the-badge)](https://hub.docker.com/r/qx6ghqkz/gallery-dl-server/tags "Docker Tags")
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/qx6ghqkz/gallery-dl-server/docker-image.yaml?branch=main&style=for-the-badge)](https://github.com/qx6ghqkz/gallery-dl-server/actions "GitHub Actions")
-[![Commits](https://img.shields.io/github/commit-activity/m/qx6ghqkz/gallery-dl-server?label=Commits&style=for-the-badge)](https://github.com/qx6ghqkz/gallery-dl-server/commits/main/ "Commit History")
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](https://raw.githubusercontent.com/qx6ghqkz/gallery-dl-server/master/LICENSE "License")
+[![Container Image](https://img.shields.io/badge/GHCR-ghcr.io%2Fjthickma%2Fgallery--dl--server-2496ed?logo=github&style=for-the-badge)](https://github.com/jthickma/gallery-dl-server/pkgs/container/gallery-dl-server "GHCR")
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jthickma/gallery-dl-server/docker-image.yaml?branch=main&style=for-the-badge)](https://github.com/jthickma/gallery-dl-server/actions "GitHub Actions")
+[![Commits](https://img.shields.io/github/commit-activity/m/jthickma/gallery-dl-server?label=Commits&style=for-the-badge)](https://github.com/jthickma/gallery-dl-server/commits/main/ "Commit History")
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](https://raw.githubusercontent.com/jthickma/gallery-dl-server/main/LICENSE "License")
 
 
 Web UI for [`gallery-dl`](https://github.com/mikf/gallery-dl) with support for downloading videos via [`yt-dlp`](https://github.com/yt-dlp/yt-dlp).
 
-* [Running](https://github.com/qx6ghqkz/gallery-dl-server#running)
-  * [Docker](https://github.com/qx6ghqkz/gallery-dl-server#docker)
-  * [Python](https://github.com/qx6ghqkz/gallery-dl-server#python)
-  * [Standalone Executable](https://github.com/qx6ghqkz/gallery-dl-server#standalone-executable)
-* [Options](https://github.com/qx6ghqkz/gallery-dl-server#options)
-* [Dependencies](https://github.com/qx6ghqkz/gallery-dl-server#dependencies)
-* [Configuration](https://github.com/qx6ghqkz/gallery-dl-server#configuration)
-* [Usage](https://github.com/qx6ghqkz/gallery-dl-server#usage)
-* [Implementation](https://github.com/qx6ghqkz/gallery-dl-server#implementation)
-* [Useful Links](https://github.com/qx6ghqkz/gallery-dl-server#useful-links)
+* [Running](https://github.com/jthickma/gallery-dl-server#running)
+  * [Docker](https://github.com/jthickma/gallery-dl-server#docker)
+  * [Python](https://github.com/jthickma/gallery-dl-server#python)
+  * [Standalone Executable](https://github.com/jthickma/gallery-dl-server#standalone-executable)
+* [Options](https://github.com/jthickma/gallery-dl-server#options)
+* [Dependencies](https://github.com/jthickma/gallery-dl-server#dependencies)
+* [Configuration](https://github.com/jthickma/gallery-dl-server#configuration)
+* [Usage](https://github.com/jthickma/gallery-dl-server#usage)
+* [Implementation](https://github.com/jthickma/gallery-dl-server#implementation)
+* [Useful Links](https://github.com/jthickma/gallery-dl-server#useful-links)
 
 ## Running
 
@@ -74,7 +73,7 @@ For example, to run multiple instances of gallery-dl-server using a single [Glue
 ```yaml
 services:
   instance-1:
-    image: qx6ghqkz/gallery-dl-server:latest
+    image: ghcr.io/jthickma/gallery-dl-server:latest
     container_name: day
     depends_on:
       - gluetun
@@ -82,7 +81,7 @@ services:
     # More settings here...
 
   instance-2:
-    image: qx6ghqkz/gallery-dl-server:latest
+    image: ghcr.io/jthickma/gallery-dl-server:latest
     container_name: night
     environment:
       - "CONTAINER_PORT=9090"
@@ -175,7 +174,7 @@ python3 -m uvicorn gallery_dl_server.server:app --host "0.0.0.0" --port "9080" -
 
 ### Standalone Executable
 
-On Windows, the program can be run using the prebuilt `.exe` file, which includes a Python interpreter and the required Python packages. Prebuilt executables for each release can be found in [Releases](https://github.com/qx6ghqkz/gallery-dl-server/releases).
+On Windows, the program can be run using the prebuilt `.exe` file, which includes a Python interpreter and the required Python packages. Prebuilt executables for each release can be found in [Releases](https://github.com/jthickma/gallery-dl-server/releases).
 
 The executable can be run from the command line with the same arguments as the Python package.
 
@@ -260,7 +259,7 @@ The application also loads a packaged gallery-dl configuration file from this re
 - `/config/gallery-dl.{conf, toml, yaml, yml}`
 - `/config/config.{json, toml, yaml, yml}`
 
-A [default configuration file](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/docs/gallery-dl.conf) for use with gallery-dl-server will automatically be placed in the directory mounted to `/config` if none are found.
+A [default configuration file](https://github.com/jthickma/gallery-dl-server/blob/main/docs/gallery-dl.conf) for use with gallery-dl-server will automatically be placed in the directory mounted to `/config` if none are found.
 
 For more information on configuration file options, see [gallery-dl/docs/configuration.rst](https://github.com/mikf/gallery-dl/blob/master/docs/configuration.rst).
 

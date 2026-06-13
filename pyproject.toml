@@ -87,11 +87,11 @@ dev = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/qx6ghqkz/gallery-dl-server#readme"
-Repository = "https://github.com/qx6ghqkz/gallery-dl-server"
-Issues = "https://github.com/qx6ghqkz/gallery-dl-server/issues"
-Releases = "https://github.com/qx6ghqkz/gallery-dl-server/releases"
-Docker = "https://hub.docker.com/r/qx6ghqkz/gallery-dl-server"
+Documentation = "https://github.com/jthickma/gallery-dl-server#readme"
+Repository = "https://github.com/jthickma/gallery-dl-server"
+Issues = "https://github.com/jthickma/gallery-dl-server/issues"
+Releases = "https://github.com/jthickma/gallery-dl-server/releases"
+Docker = "https://github.com/jthickma/gallery-dl-server/pkgs/container/gallery-dl-server"
 
 [project.scripts]
 gallery-dl-server = "gallery_dl_server.app:main"

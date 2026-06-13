@@ -7,7 +7,7 @@
 
 services:
   gallery-dl:
-    image: qx6ghqkz/gallery-dl-server:latest
+    image: ghcr.io/jthickma/gallery-dl-server:latest
     container_name: gallery-dl
     depends_on:
       - gluetun
