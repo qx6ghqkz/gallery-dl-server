@@ -8,7 +8,6 @@
 [![Commits](https://img.shields.io/github/commit-activity/m/qx6ghqkz/gallery-dl-server?label=Commits&style=for-the-badge)](https://github.com/qx6ghqkz/gallery-dl-server/commits/main/ "Commit History")
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](https://raw.githubusercontent.com/qx6ghqkz/gallery-dl-server/master/LICENSE "License")
 
-![screenshot](https://raw.githubusercontent.com/qx6ghqkz/gallery-dl-server/refs/heads/main/images/gallery-dl-server.png)
 
 Web UI for [`gallery-dl`](https://github.com/mikf/gallery-dl) with support for downloading videos via [`yt-dlp`](https://github.com/yt-dlp/yt-dlp).
 
@@ -40,7 +39,7 @@ docker run -d \
   -v "/path/to/config:/config" \
   -v "/path/to/downloads:/gallery-dl" \
   --restart on-failure \
-  qx6ghqkz/gallery-dl-server:latest
+  ghcr.io/jthickma/gallery-dl-server:latest
 ```
 
 #### Docker Compose
@@ -50,7 +49,7 @@ This is an example of a `docker-compose.yaml` service definition which can be us
 ```yaml
 services:
   gallery-dl:
-    image: qx6ghqkz/gallery-dl-server:latest
+    image: ghcr.io/jthickma/gallery-dl-server:latest
     container_name: gallery-dl
     ports:
       - "9080:9080"
@@ -65,22 +64,6 @@ services:
 
 This is another example which uses a VPN client container for its networking.
 
-```yaml
-services:
-  gallery-dl:
-    image: qx6ghqkz/gallery-dl-server:latest
-    container_name: gallery-dl
-    network_mode: container:vpn
-    environment:
-      - "UID=1000"
-      - "GID=1000"
-    volumes:
-      - "/path/to/config:/config"
-      - "/path/to/downloads:/gallery-dl"
-    restart: on-failure
-```
-
-[Gluetun](https://github.com/qdm12/gluetun) is recommended for VPN usage. See [docs/docker-compose.yaml](https://github.com/qx6ghqkz/gallery-dl-server/blob/main/docs/docker-compose.yaml) for an example.
 
 #### Port Mapping
 
