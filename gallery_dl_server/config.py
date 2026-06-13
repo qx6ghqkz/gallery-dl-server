@@ -23,6 +23,8 @@ def clear(conf: dict[str, Any] = _config):
 
 def get_default_configs():
     """Return default gallery-dl configuration file locations."""
+    bundled_config = utils.resource_path("gallery-dl.conf")
+
     if utils.CONTAINER:
         _default_configs = [
             "/config/gallery-dl.conf",
@@ -51,6 +53,8 @@ def get_default_configs():
                 "config.json",
             )
         )
+
+    _default_configs.append(bundled_config)
 
     return _default_configs
 

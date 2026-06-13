@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
+import mimetypes
 import multiprocessing
 import os
 import queue
@@ -10,8 +11,10 @@ import time
 
 from contextlib import asynccontextmanager
 from multiprocessing.queues import Queue
+from pathlib import Path
 from types import FrameType
 from typing import Any
+from urllib.parse import quote
 
 import aiofiles
 import watchfiles
@@ -22,7 +25,7 @@ from starlette.datastructures import UploadFile
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import RedirectResponse, JSONResponse, StreamingResponse
+from starlette.responses import RedirectResponse, JSONResponse, StreamingResponse, FileResponse
 from starlette.requests import Request
 from starlette.routing import Route, WebSocketRoute, Mount
 from starlette.staticfiles import StaticFiles
@@ -38,6 +41,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 import gallery_dl.version
 import yt_dlp.version
 
+from . import config as server_config
 from . import download, output, utils, version
 
 custom_args = output.args
@@ -47,6 +51,41 @@ last_line = ""
 last_position = 0
 
 log = output.initialise_logging(__name__)
+
+MEDIA_EXTENSIONS = {
+    ".aac": "audio",
+    ".aif": "audio",
+    ".aiff": "audio",
+    ".flac": "audio",
+    ".m4a": "audio",
+    ".mp3": "audio",
+    ".oga": "audio",
+    ".ogg": "audio",
+    ".opus": "audio",
+    ".wav": "audio",
+    ".weba": "audio",
+    ".avif": "image",
+    ".bmp": "image",
+    ".gif": "image",
+    ".jpeg": "image",
+    ".jpg": "image",
+    ".png": "image",
+    ".svg": "image",
+    ".webp": "image",
+    ".avi": "video",
+    ".m4v": "video",
+    ".mkv": "video",
+    ".mov": "video",
+    ".mp4": "video",
+    ".mpeg": "video",
+    ".mpg": "video",
+    ".ogv": "video",
+    ".webm": "video",
+}
+MEDIA_LIMIT = 500
+MEDIA_ROOT_CACHE_SECONDS = 10.0
+media_root_cache: Path | None = None
+media_root_cache_time = 0.0
 
 
 async def redirect(request: Request):
@@ -212,6 +251,133 @@ async def clear_logs(request: Request):
             },
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+def get_media_root():
+    """Return the configured download directory for media browsing."""
+    global media_root_cache, media_root_cache_time
+
+    now = time.monotonic()
+    if media_root_cache and now - media_root_cache_time < MEDIA_ROOT_CACHE_SECONDS:
+        return media_root_cache
+
+    try:
+        server_config.clear()
+        server_config.load()
+        media_root = server_config.get(["extractor", "base-directory"])
+    except Exception as e:
+        log.debug(f"Exception while loading media root: {type(e).__name__}: {e}")
+        media_root = None
+
+    if not media_root:
+        media_root = "/gallery-dl" if utils.CONTAINER else os.path.join(os.getcwd(), "gallery-dl")
+
+    media_root_cache = Path(utils.normalise_path(str(media_root))).resolve()
+    media_root_cache_time = now
+
+    return media_root_cache
+
+
+def get_media_kind(path: Path):
+    """Return the broad media type for a file path."""
+    return MEDIA_EXTENSIONS.get(path.suffix.lower())
+
+
+def is_path_within(path: Path, root: Path):
+    """Return whether a resolved path is inside a resolved root directory."""
+    try:
+        os.path.commonpath([str(path), str(root)])
+    except ValueError:
+        return False
+
+    return os.path.commonpath([str(path), str(root)]) == str(root)
+
+
+def build_media_item(path: Path, media_root: Path):
+    """Build a JSON-serialisable media item for the browser UI."""
+    stat = path.stat()
+    relative_path = path.relative_to(media_root).as_posix()
+    media_type = get_media_kind(path)
+
+    return {
+        "name": path.name,
+        "path": relative_path,
+        "directory": path.parent.relative_to(media_root).as_posix(),
+        "type": media_type,
+        "size": stat.st_size,
+        "modified": stat.st_mtime,
+        "url": "/gallery-dl/media/" + quote(relative_path),
+    }
+
+
+def get_media_items(media_root: Path):
+    """Return recent media files from the configured download directory."""
+    items = []
+    total = 0
+
+    if not media_root.is_dir():
+        return items, total
+
+    for root, dirnames, filenames in os.walk(media_root):
+        dirnames[:] = [dirname for dirname in dirnames if not dirname.startswith(".")]
+
+        for filename in filenames:
+            path = Path(root, filename)
+
+            if filename.startswith(".") or not get_media_kind(path):
+                continue
+
+            try:
+                resolved_path = path.resolve()
+                if not is_path_within(resolved_path, media_root):
+                    continue
+
+                total += 1
+                items.append(build_media_item(resolved_path, media_root))
+            except OSError as e:
+                log.debug(f"Exception while reading media file: {type(e).__name__}: {e}")
+
+    items.sort(key=lambda item: item["modified"], reverse=True)
+
+    return items[:MEDIA_LIMIT], total
+
+
+async def media_index(request: Request):
+    """Return downloaded media files for the web UI."""
+    media_root = get_media_root()
+    items, total = await asyncio.to_thread(get_media_items, media_root)
+
+    return JSONResponse(
+        {
+            "root": str(media_root),
+            "exists": media_root.is_dir(),
+            "total": total,
+            "limit": MEDIA_LIMIT,
+            "items": items,
+        }
+    )
+
+
+async def media_file(request: Request):
+    """Serve a downloaded media file from the configured media directory."""
+    media_root = get_media_root()
+    requested_path = (media_root / request.path_params["path"]).resolve()
+
+    if (
+        not is_path_within(requested_path, media_root)
+        or not requested_path.is_file()
+        or not get_media_kind(requested_path)
+    ):
+        return JSONResponse(
+            {
+                "success": False,
+                "error": "Media file not found.",
+            },
+            status_code=HTTP_404_NOT_FOUND,
+        )
+
+    media_type, _encoding = mimetypes.guess_type(requested_path.name)
+    return FileResponse(requested_path, media_type=media_type)
 
 
 async def log_stream(request: Request):
@@ -400,6 +566,8 @@ routes = [
     Route("/", endpoint=redirect, methods=["GET"]),
     Route("/gallery-dl", endpoint=homepage, methods=["GET"]),
     Route("/gallery-dl/q", endpoint=submit_form, methods=["POST"]),
+    Route("/gallery-dl/media", endpoint=media_index, methods=["GET"]),
+    Route("/gallery-dl/media/{path:path}", endpoint=media_file, methods=["GET", "HEAD"]),
     Route("/gallery-dl/logs", endpoint=log_route, methods=["GET"]),
     Route("/gallery-dl/logs/clear", endpoint=clear_logs, methods=["POST"]),
     Route("/stream/logs", endpoint=log_stream, methods=["GET"]),
@@ -413,6 +581,8 @@ csp_policy = (
     "form-action 'self'; "
     "manifest-src 'self'; "
     "img-src 'self' data:; "
+    "media-src 'self'; "
+    "object-src 'none'; "
     "script-src 'self' https://cdn.jsdelivr.net; "
     "style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
     "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com;"

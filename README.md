@@ -240,6 +240,21 @@ Additionally, YAML and TOML configuration files are supported at any of the pre-
 
 When run with Docker, the configuration file must be inside the directory mounted to `/config` inside the container.
 
+The application also loads a packaged gallery-dl configuration file from this repository after user configuration files. It applies the reproducible extractor settings used by this server:
+
+```json
+{
+  "extractor": {
+    "vsco": {
+      "tls12": false
+    },
+    "tiktok": {
+      "audio": false
+    }
+  }
+}
+```
+
 ### Locations
 
 - `/config/gallery-dl.{conf, toml, yaml, yml}`
@@ -260,6 +275,8 @@ Downloads can be triggered by supplying the `{{url}}` of the requested video thr
 ### Web UI
 
 Navigate to `http://{{host}}:{{port}}/gallery-dl` and enter the requested `{{url}}`.
+
+The homepage includes a media library and player for downloaded image, video, and audio files. The library reads from the configured gallery-dl `extractor.base-directory`, which should point at the same directory mounted for downloads, such as `/gallery-dl/` in Docker.
 
 ### Curl
 
