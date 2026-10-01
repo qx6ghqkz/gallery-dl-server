@@ -303,6 +303,10 @@ The following bookmarklet can be used from the bookmarks bar to send the current
 javascript:(function(){var url="http://${host}:${port}/gallery-dl/q",newTab=window.open(url,"_blank"),f=newTab.document.createElement("form");f.action=url;f.method="POST";var i=newTab.document.createElement("input");i.name="url";i.type="hidden";i.value=window.location.href;f.appendChild(i);newTab.document.body.appendChild(f);f.submit();})();
 ```
 
+## Hosted option
+
+If you’d rather not self-host the Web UI + gallery-dl/yt-dlp stack, [Vid Kraken](https://vidkraken.com) offers a managed YouTube download API (info / mp3 / mp4).
+
 ## Implementation
 
 This service operates using the ASGI web server [`uvicorn`](https://github.com/encode/uvicorn) and is built on the [`starlette`](https://github.com/encode/starlette) ASGI framework.
