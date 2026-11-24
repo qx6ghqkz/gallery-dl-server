@@ -129,7 +129,7 @@ services:
 
 ### Python
 
-If Python 3.10 or later (3.12 is recommended) is installed and on the PATH, the server can simply be run from the command line.
+If Python 3.12 or later is installed and on the PATH, the server can simply be run from the command line.
 
 #### Run from Source
 
@@ -231,17 +231,11 @@ All required and optional Python and non-Python dependencies are included in the
 
 In order to run with Python, the dependencies in `requirements.txt` need to be installed in the running Python environment. These are included in the standalone executable and do not need to be installed.
 
-Installation with `pip` only installs the required dependencies by default. Install `gallery-dl-server[full]` for the optional dependencies.
-
 ### Optional
 
-- [`brotli`](https://github.com/google/brotli) or [`brotlicffi`](https://github.com/python-hyper/brotlicffi): Brotli content encoding support
-- [`mutagen`](https://github.com/quodlibet/mutagen): embed metadata and thumbnails in certain formats
-- [`pycryptodomex`](https://github.com/Legrandin/pycryptodome): decrypt AES-128 HLS streams and other forms of data
-- [`pyyaml`](https://pyyaml.org): YAML configuration file support
-- [`toml`](https://pypi.org/project/toml): TOML configuration file support (<= Python 3.10 only)
-
 Non-Python dependencies must be installed separately. [`FFmpeg`](https://ffmpeg.org) is strongly recommended for video and audio conversion and should be accessible from the command line, i.e. on the PATH.
+
+[`Deno`](https://deno.com) must be installed and on the PATH in order for `yt-dlp` to download from YouTube.
 
 There is also [`MKVToolNix`](https://mkvtoolnix.download/index.html), which includes [`mkvmerge`](https://www.matroska.org/downloads/mkvtoolnix.html) for accurate [Ugoira](https://www.pixiv.help/hc/en-us/articles/235584628-What-are-Ugoira) frame timecodes.
 

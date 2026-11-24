@@ -118,11 +118,8 @@ def load_config(path: str, exit_codes: list[int | str | None]):
         try:
             import tomllib as toml
         except ImportError:
-            try:
-                import toml  # type: ignore
-            except ImportError:
-                exit_codes.append(4)
-                raise
+            exit_codes.append(4)
+            raise
 
         config.load([path], strict=True, loads=toml.loads)
 
